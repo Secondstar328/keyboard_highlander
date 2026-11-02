@@ -261,6 +261,12 @@ canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;b
 .b-post.sns img{width:40px;height:40px;border-radius:50%;image-rendering:pixelated;flex:none}
 .skin-sns .c{border-bottom:1px solid var(--b-line)}
 .skin-sns .c img{border-radius:50%}
+/* 플랫폼 전용 행동 타일 */
+.tile.skinact{border-color:var(--key);background:#7fd1b912}
+.tile.skinact .ic{background:#7fd1b926}
+.tile.skinact .price{color:var(--key)}
+.tile.skinact.poor .price{color:var(--dim)}
+
 /* 선택지: 머지 컨플릭트 */
 .overlay.dil{background:#0a0a0ce6;animation:dimin .25s ease-out}
 @keyframes dimin{from{opacity:0}}
@@ -507,6 +513,32 @@ const TOOL_FX = {
   admin:[['의심 0',1],['정지 면제 3턴',1]], press:[['🧠 일괄 제압',1],['의심▼',1]], bots:[['계정+3',1],['의심▲▲',0]],
   poll:[['여론▲▲▲▲',1],['의심▲',0]], portal:[['상대 전부 묻기',1],['의심▲▲',0]],
 };
+/* ---------- 플랫폼 전용 행동 (무료, 쓰고 나면 3턴 쿨타임) ---------- */
+const SKIN_CD = 3;
+const SKIN_ACTS = {
+  gall:  {icon:'🏆', name:'념글 보내기',     fx:[['여론▲▲▲',1],['의심▲',0]],
+    run(){ S.op += 18; S.sus += 6; return '🏆 우리 편 글이 개념글로 올라갔다. 추천 140개가 10분 만에 몰렸다.'; }},
+  forum: {icon:'🧾', name:'과금 영수증 인증', fx:[['🕵️ 전부 제압',1],['여론▲▲',1]],
+    run(){ const fs = S.open.filter(x=>x.type==='sus'); S.op += 10;
+      fs.forEach(f=>silence(f, null, pick(['…300 쓴 사람이 괜찮다면야','아 찐 고래였네 ㅇㅋ','영수증까지 있으면 할 말 없지'])));
+      return '🧾 "저 이 게임에 300 쓴 사람인데요" 영수증 인증샷을 올렸다. (영수증은 포토샵)'; }},
+  blog:  {icon:'📝', name:'체험단 후기',     fx:[['여론▲ ×3턴',1],['의심▲',0]],
+    run(){ S.sus += 3; S.buffs.push({n:3, op:7, label:'📝 체험단 후기'}); return '📝 체험단 블로거 3명이 "내돈내산 솔직 후기"를 올렸다. (원고는 회사가 써줌)'; }},
+  map:   {icon:'⭐', name:'별점 1점 테러',    fx:[['여론▲▲▲',1],['의심▲▲▲',0]],
+    run(){ S.op += 20; S.sus += 10; return '⭐ 별점 1점 리뷰 20개가 한꺼번에 달렸다. 다들 "방문 1회"다.'; }},
+  video: {icon:'👎', name:'싫어요 폭격',      fx:[['🧠 전부 약화',1],['여론▲',1],['의심▲▲',0]],
+    run(){ S.op += 8; S.sus += 5;
+      S.open.filter(f=>f.type==='logic').forEach(f=>{ f.hp--; if (f.hp <= 0) silence(f, null, '…싫어요가 왜 이렇게 많아? 내가 틀렸나'); else drawHp(f); });
+      return '👎 영상에 싫어요가 3,000개 박혔다. 사람들이 영상 내용을 의심하기 시작한다.'; }},
+  news:  {icon:'📈', name:'공감순 뒤집기',    fx:[['👥 2개 묻기',1],['여론▲',1],['의심▲▲',0]],
+    run(){ S.op += 10; S.sus += 6;
+      S.open.filter(f=>f.type==='crowd').slice(0,2).forEach(f=>silence(f, null, '(공감 순위에서 밀려 안 보이는 댓글)'));
+      return '📈 우리 편 댓글이 순공감순 1위로 올라갔다. 상대 댓글은 "더보기" 아래로 밀렸다.'; }},
+  sns:   {icon:'🔁', name:'해시태그 총공',    fx:[['여론▲ ×3턴',1],['의심▲▲',0]],
+    run(){ S.op += 6; S.sus += 6; S.buffs.push({n:3, op:7, label:'🔁 해시태그 총공'});
+      return `🔁 "${ROUNDS[S.r].h.tag}" 총공 시작. 계정 200개가 같은 시각에 같은 문구를 올렸다.`; }},
+};
+
 const TAC_BG = {source:'#7fb7ff22', mock:'#f2777a22', divert:'#7fd1b922', empathy:'#e6b67322'};
 const chip = ([t,k]) => `<span class="fx fx${k}">${t}</span>`;
 
@@ -1125,7 +1157,7 @@ const ladder = () => `<div class="ladder">${ROUNDS.map((d,i)=>`<div class="${i<S
 function screenTitle(){
   FRIEND = rollFriend();
   $('#app').innerHTML = `
-  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.8.1</span></div>
+  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.9</span></div>
   <div class="body stack">
     <h1>키보드<br>하이랜더</h1>
     <canvas class="sprite" id="hero" aria-label="모니터 앞에 앉은 알바생 도트 그림"></canvas>
@@ -1150,6 +1182,7 @@ function screenHow(){
     </div>
     <p>3. 부계정마다 <b>말투</b>가 다릅니다. 같은 계정을 연달아 쓰면 의심받아요.</p>
     <p>4. 의뢰를 성공하면 <b>레벨 업</b>. 더 큰 의뢰인이 찾아오고, 새 도구가 열립니다. 돈 드는 도구는 의뢰인이 준 <b>작전비</b>에서 빠지고, 남은 작전비는 당신 몫이에요.</p>
+    <p>+ 게시판마다 <b>그 플랫폼 전용 행동</b>이 하나씩 있어요(념글 보내기, 별점 1점 테러, 싫어요 폭격 등). 무료지만 한 번 쓰면 3턴을 기다려야 해요.</p>
     <p>5. 의심도가 100이 되면 방금 쓴 계정이 정지됩니다. 계정이 0개가 되거나 같은 의뢰를 두 번 연속 망치면 끝.</p>
     <div class="row"><button class="btn" id="go">알겠음</button></div>
   </div></div>`;
@@ -1181,7 +1214,7 @@ function startRound(){
   const d = ROUNDS[S.r];
   makeBags();
   S.op = d.start; S.sus = Math.max(0, S.sus - 30); S.turn = 0; S.busy = false; S.open = []; S.sel = null;
-  S.budget = d.budget; S.buffs = []; S.shield = 0;
+  S.budget = d.budget; S.buffs = []; S.shield = 0; S.skcd = 0;
   $('#app').innerHTML = `
   <div class="win" id="hudwin"><div class="bar"><span>의뢰_0${S.r+1}.md</span><span class="ghost">작업일지.md</span><span>Lv.${level()}</span></div>
     <div class="body stack">
@@ -1209,6 +1242,8 @@ function startRound(){
         const strong = Object.keys(FT).filter(x=>T.vs[x]===2).map(x=>[FT[x].icon+' 강함',1]);
         const weak = Object.keys(FT).filter(x=>T.vs[x]===0).map(x=>[FT[x].icon+' 역효과',0]);
         return `<button class="tile tac" data-t="${k}"><span class="ic" style="background:${TAC_BG[k]}">${T.icon}</span><span class="nm">${T.name}</span><span class="fxs">${strong.concat(weak).map(chip).join('')}</span><span class="badge"></span></button>`; }).join('')}</div>
+      <div class="hrow"><h3>${esc(SK().name)} 전용</h3><span class="cmt">// 무료 · 쓰고 나면 ${SKIN_CD}턴 쿨타임</span></div>
+      <div class="ggrid">${(() => { const a = SKIN_ACTS[d.skin]; return `<button class="tile tool skinact" id="skinact"><span class="ic">${a.icon}</span><span class="nm">${a.name}</span><span class="fxs">${a.fx.map(chip).join('')}</span><span class="price" id="skincd">사용 가능</span></button>`; })()}</div>
       <div class="hrow"><h3>도구</h3><span class="cmt">// 💰는 작전비에서 차감</span></div>
       <div class="ggrid" id="tools">${TOOLS.filter(t=>t.lv<=level()).map(t=>`<button class="tile tool ${t.cost?'paid':''}" data-g="${t.id}"><span class="ic">${t.icon}</span><span class="nm">${t.name}</span><span class="fxs">${TOOL_FX[t.id].map(chip).join('')}</span>${t.cost?`<span class="price">💰 ${won(t.cost)}</span>`:'<span class="price free">무료</span>'}</button>`).join('')}</div>
       ${(() => { const lk = TOOLS.filter(t=>t.lv>level()); if (!lk.length) return '<p class="cmt">// 모든 도구 해금 완료</p>';
@@ -1217,6 +1252,7 @@ function startRound(){
   <div class="status"><span class="br">⎇ main</span><span id="stline"></span><span>UTF-8</span><span>Markdown</span></div>`;
   document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => reply(b.dataset.t));
   document.querySelectorAll('[data-g]').forEach(b => b.onclick = () => useTool(b.dataset.g));
+  $('#skinact').onclick = useSkinAct;
   const thk = d.thumb || SK().thumb, th = $('#thumb'); if (th && thk) drawPix(th, PIX[thk].rows, PIX[thk].pal);
   spawnFoe(); spawnFoe(); spawnFoe();
   autoAcc(); hud();
@@ -1276,7 +1312,7 @@ function hud(){
   const bs = $('#bstat'); if (bs) bs.innerHTML = SK().stat();
   $('#ccount').textContent = document.querySelectorAll('#feed .c.me, #feed .c.foe').length;
   $('#drain').textContent = S.open.length + '개 · 턴당 -' + S.open.reduce((s,f)=>s+FT[f.type].drain,0) + '%';
-  $('#buffs').innerHTML = S.buffs.map(b=>`<span>📹 바이럴 진행 중 +${b.op}%/턴 · ${b.n}턴</span>`).join('') + (S.shield ? `<span>🔑 정지 면제 ${S.shield}턴</span>` : '');
+  $('#buffs').innerHTML = S.buffs.map(b=>`<span>${b.label || '📹 바이럴 진행 중'} +${b.op}%/턴 · ${b.n}턴</span>`).join('') + (S.shield ? `<span>🔑 정지 면제 ${S.shield}턴</span>` : '');
   $('#accn').textContent = S.accs.length;
   $('#chips').innerHTML = S.accs.map((a,i)=>`<button class="chip ${i===S.acc?'on':''}" data-i="${i}"><img alt="" src="${avatar(a.nick,'me')}">@${esc(a.nick)} <small>#${esc(a.tone)}</small>${a.used===S.turn-1?'<small class="hot">방금 씀</small>':''}</button>`).join('');
   document.querySelectorAll('.chip').forEach(c => c.onclick = () => { S.acc = +c.dataset.i; hud(); });
@@ -1286,6 +1322,7 @@ function hud(){
   document.querySelectorAll('[data-t]').forEach(b => { const v = f ? TACTICS[b.dataset.t].vs[f.type] : -1;
     b.disabled = !f || S.busy; b.classList.toggle('good', v===2); b.classList.toggle('bad', v===0);
     b.querySelector('.badge').textContent = v===2 ? '추천' : v===0 ? '역효과' : ''; });
+  const sa = $('#skinact'); if (sa){ sa.disabled = S.busy || S.skcd > 0; sa.classList.toggle('poor', S.skcd > 0); $('#skincd').textContent = S.skcd > 0 ? `⏳ ${S.skcd}턴 뒤 사용 가능` : '✨ 사용 가능'; }
   document.querySelectorAll('[data-g]').forEach(b => { const t = TOOLS.find(x=>x.id===b.dataset.g); const poor = t.cost>S.budget;
     b.disabled = S.busy || t.lv>level() || poor; b.classList.toggle('poor', poor); if (t.cost) b.querySelector('.price').textContent = poor ? '💸 작전비 부족' : '💰 ' + won(t.cost); });
 }
@@ -1314,6 +1351,16 @@ function reply(t){
     if (f.hp <= 0) silence(f, null, m === 2 ? B.rep[f.type][t].next() : B.rep.give[f.type].next());
     else { addReply(f, f.nick, B.rep[f.type][t].next(), 'foe'); drawHp(f); }
   }
+  S.sel = null;
+  endTurn();
+}
+
+function useSkinAct(){
+  if (S.busy || S.skcd > 0) return;
+  S.st.actions++; S.st.skin = (S.st.skin||0) + 1;
+  const msg = SKIN_ACTS[ROUNDS[S.r].skin].run();
+  line('evt', msg);
+  S.skcd = SKIN_CD + 1;
   S.sel = null;
   endTurn();
 }
@@ -1378,6 +1425,7 @@ function endTurn(){
     if (Math.random() < .22){ const e = B.events.next(); S.op += e.op; S.sus += e.sus; line('evt', '⚡ ' + e.t); }
     S.sus = clamp(S.sus - 3, 0, 100); S.op = clamp(S.op, 0, 100);
     if (S.shield){ S.shield--; S.sus = Math.min(S.sus, 99); }
+    if (S.skcd) S.skcd--;
     S.turn++;
     if (S.sus >= 100 && banCheck()) return;
     autoAcc();
