@@ -13,7 +13,7 @@
 
 - **웹에서 바로 플레이: https://secondstar328.github.io/keyboard_highlander/**
 
-- `index.html`을 내려받아 브라우저로 열면 바로 시작돼요.
+- `site/index.html`을 내려받아 브라우저로 열면 바로 시작돼요.
 - 저장소를 공개하고 GitHub Pages를 켜면 웹 주소로도 플레이할 수 있어요 (아래 "웹에 올리기" 참고).
 
 ### 규칙
@@ -105,7 +105,8 @@
 ## 파일 구조
 
 ```
-index.html              게임 전체 (HTML·CSS·JS 한 파일, 약 80KB)
+site/index.html         게임 전체 (HTML·CSS·JS 한 파일)
+index.html              옛 GitHub Pages 주소를 site/로 넘겨주는 이동용 파일
 docs/screenshots/       README용 스크린샷
 CHANGELOG.md            버전별 변경 기록
 ```
