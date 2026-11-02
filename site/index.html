@@ -286,6 +286,30 @@ canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;b
 .memo.bill .bi.tot{border-top:1px dashed var(--line);padding-top:4px}
 .memo .warnline{color:var(--warn);font-size:13px}
 
+/* 선택지 통장 줄 */
+.wallet{font-size:13px;color:var(--ink);background:#e6b67314;border:1px solid #e6b67340;border-radius:6px;padding:8px 12px}
+.wallet b{color:var(--str)}
+.wallet .short{color:var(--warn);font-weight:700}
+.wallet .ok{color:var(--ok)}
+
+/* 가족 단톡방 */
+.overlay.fam{background:#0a0a0ce6}
+.famchat{width:100%;max-width:380px;max-height:100%;overflow-y:auto;background:#b2c7d9;border-radius:18px;box-shadow:0 20px 60px #000;animation:pop .3s ease-out;font-family:"Nanum Gothic",sans-serif;color:#222}
+.fhead{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#a9bfd2;border-radius:18px 18px 0 0;font-size:15px}
+.fbody{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.fday{align-self:center;font-size:11px;background:#0000001f;color:#fff;padding:2px 10px;border-radius:999px}
+.fmsg{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.fmsg .who{font-size:12px;color:#333}
+.bub{background:#fff;border-radius:4px 14px 14px 14px;padding:8px 12px;font-size:14px;max-width:85%}
+.fwd{background:#fff;border-radius:4px 14px 14px 14px;padding:8px 12px;max-width:90%;border-left:3px solid #8aa3b8}
+.fwd span{font-size:11px;color:#777}
+.fwd p{font-size:14px;margin-top:2px;font-weight:700}
+.fnote{font-size:12px;color:#fff;background:#00000040;border-radius:8px;padding:6px 10px;text-align:center}
+.fbtns{display:flex;gap:8px;padding:12px 14px 16px;flex-wrap:wrap}
+.fbtns .btn{flex:1;min-width:140px;background:#fff;color:#222;border:0;box-shadow:none}
+.fbtns .btn::before{content:""}
+.fbtns .btn.alt{background:#ffffff99;color:#333}
+
 /* 엔딩 리뷰 */
 .survey{display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);border-radius:8px;padding:14px;background:#ffffff06}
 .survey h2{font-size:17px}
@@ -1381,7 +1405,7 @@ function newGame(){
   ROUNDS = rollRounds();
   S = { r:0, op:0, sus:0, money:0, budget:0, karma:0, turn:0, sel:null, acc:0, busy:false, open:[], fid:0, fails:0,
         buffs:[], shield:0, accs:[mkAcc(0), mkAcc(1)], usedPersonas:2, botN:0,
-        st:{replies:0, strong:0, back:0, tools:0, spent:0, boosts:0, alts:2, bans:0, wins:0, actions:0, echo:0, bills:0, sold:0} };
+        st:{replies:0, strong:0, back:0, tools:0, spent:0, boosts:0, alts:2, bans:0, wins:0, actions:0, echo:0, bills:0, sold:0}, myLog:[], fam:null };
 }
 const level = () => S.r + 1;
 function mkAcc(i){ const p = PERSONAS[i % PERSONAS.length]; return {...p, nick: i<PERSONAS.length ? p.nick : p.nick+(i+1), used:-99}; }
@@ -1607,7 +1631,7 @@ function reply(t){
   const f = S.open.find(x=>x.id===S.sel); if (!f || S.busy) return;
   const T = TACTICS[t], m = T.vs[f.type], a = useAcc();
   S.st.actions++; S.st.replies++;
-  const myLine = B.my[t].next();
+  const myLine = B.my[t].next(); S.myLog.push({stage:S.r, text:myLine});
   addReply(f, a.nick, voice(a, myLine), 'me');
   if (m === 0){
     S.op -= 4; S.sus += T.sus + 6; S.st.back++;
@@ -1644,7 +1668,7 @@ function useTool(id){
   if (t.cost){ S.budget -= t.cost; S.st.tools++; S.st.spent += t.cost; }
   const buy = msg => line('buy', `💸 -${won(t.cost)} · ${msg}`);
   switch(id){
-    case 'post': { const a = useAcc(); S.op += 6; S.sus += 5; feedAdd(commentEl(a.nick, '[새 글] ' + voice(a, B.my.post.next()), 'me')); break; }
+    case 'post': { const a = useAcc(); S.op += 6; S.sus += 5; const pl = B.my.post.next(); S.myLog.push({stage:S.r, text:pl}); feedAdd(commentEl(a.nick, '[새 글] ' + voice(a, pl), 'me')); break; }
     case 'boost': S.op += 4*S.accs.length; S.sus += 15; S.st.boosts++; line('evt', `👍 「${d.S}」 쪽 댓글 추천 수가 갑자기 ${S.accs.length*37}개 올랐다.`); break;
     case 'alt': {
       const a = mkAcc(S.usedPersonas++); a.used = S.turn; S.accs.push(a); S.sus += 4; S.st.alts++;
@@ -1709,6 +1733,7 @@ function endTurn(){
     if (S.sus >= 100 && banCheck()) return;
     autoAcc();
     S.busy = false; hud();
+    if (S.turn === 3 && S.r >= 5 && !S.fam && S.myLog.some(x => x.stage < S.r)) return showFamily();
     if (S.turn === 6) return showDilemma();
     if (S.turn >= d.turns){ S.busy = true; hud(); setTimeout(screenResult, 700); }
   }, 450);
@@ -1722,6 +1747,35 @@ function banCheck(){
   const h = $('#hudwin'); h.classList.remove('shake'); void h.offsetWidth; h.classList.add('shake');
   if (!S.accs.length){ hud(); setTimeout(()=>screenEnding('banned'), 900); return true; }
   return false;
+}
+
+/* 가족 단톡방: 예전에 내가 쓴 문장이 그대로 엄마한테까지 돌아옴 (한 판에 한 번, 6단계 이후) */
+function showFamily(){
+  S.busy = true; hud();
+  const past = S.myLog.filter(x => x.stage < S.r), pool = past.filter(x => x.stage >= 2);
+  const quote = pick(pool.length ? pool : past).text;
+  const ov = document.createElement('div'); ov.className = 'overlay fam';
+  ov.innerHTML = `<div class="famchat" role="dialog" aria-modal="true" aria-label="가족 단톡방">
+    <div class="fhead"><span>‹</span><b>우리 가족 4</b><span>☰</span></div>
+    <div class="fbody">
+      <div class="fday">오늘</div>
+      <div class="fmsg"><span class="who">엄마</span><div class="fwd"><span>↪ 전달된 메시지</span><p>${esc(quote)}</p></div></div>
+      <div class="fmsg"><span class="who">엄마</span><div class="bub">이거 진짜래? 너도 조심해라</div></div>
+      <div class="fmsg"><span class="who">아빠</span><div class="bub">요즘 인터넷 보면 다 맞는 말이더라</div></div>
+      <div class="fmsg"><span class="who">동생</span><div class="bub">ㅋㅋ 이런 거 다 알바가 쓰는 거임</div></div>
+      <div class="fmsg"><span class="who">엄마</span><div class="bub">얘는 무슨~ 많이들 공감 눌렀던데</div></div>
+      <div class="fnote">당신이 ${S.r - past.find(x=>x.text===quote).stage}달 전에 쓴 문장이다. 토씨 하나 다르지 않다.</div>
+    </div>
+    <div class="fbtns"><button class="btn alt" id="fa">읽음 표시만 남긴다</button><button class="btn" id="fb">"응, 맞대"라고 보낸다</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  $('#fa').focus();
+  const done = reply => { ov.remove(); S.fam = reply;
+    line(reply === 'yes' ? 'sys' : 'evt', reply === 'yes' ? '→ 엄마가 하트 이모티콘을 보냈다. 그 문장은 단톡방 공지로 고정됐다.' : '→ 당신은 휴대폰을 엎어 놓았다. 단톡방 숫자 1은 금방 사라졌다.');
+    if (reply === 'yes') S.karma++;
+    S.busy = false; hud(); };
+  $('#fa').onclick = () => done('read');
+  $('#fb').onclick = () => done('yes');
 }
 
 function showDilemma(){
@@ -1738,6 +1792,8 @@ function showDilemma(){
     <div class="cbar"><span>⚠ MERGE CONFLICT</span><span>선택.md · 의뢰 ${S.r+1} · 턴 ${S.turn}</span></div>
     <div class="cbody">
       <div class="dm"><img alt="" src="${avatar(d.client,'foe')}"><div><div class="from">${esc(d.client)}</div><p id="dq">${esc(q.t)}</p></div></div>
+      ${(() => { const nb = (BILLS[S.r+1]||[]).reduce((a,[,v])=>a+v, 0); if (!nb) return '';
+        return `<p class="wallet">💳 지금 통장 <b>${won(S.money)}</b> · 다음 달 청구서 <b>${won(nb)}</b>${S.money < nb ? ` <span class="short">→ ${won(nb - S.money)} 모자람</span>` : ' <span class="ok">→ 낼 수 있음</span>'}</p>`; })()}
       <div class="choices">
         <button class="choice cross" id="da"><span class="mk">&lt;&lt;&lt;&lt;&lt;&lt;&lt; 선 넘기</span><span class="lb">${esc(q.a.l)}</span><ul>${fx(q.a)}</ul><span class="go">Accept ▶</span></button>
         <div class="sep" aria-hidden="true">=======</div>
@@ -1847,6 +1903,7 @@ function screenEnding(kind){
     `처음 부탁했던 ${friendLabel()}는 언제부턴가 갤에 들어오지 않는다.`,
     '당신과 싸우던 사람들, 당신 편을 들던 사람들, 그 글을 퍼 나르던 사람들.',
     ...(st.echo ? [`당신이 쓴 문장을 토씨 하나 안 바꾸고 옮겨 적은 사람만 ${st.echo}명이었다.`] : []),
+    ...(S.fam === 'yes' ? ['가족 단톡방 공지에는 아직도 당신이 쓴 문장이 걸려 있다.'] : S.fam === 'read' ? ['엄마는 그 문장을 다른 단톡방에도 보냈다고 했다.'] : []),
     '처음 글을 쓴 사람은 언제나 한 명이었다. 나머지는 전부, 그 글을 믿었다.',
   ];
   const finalLine = kind === 'clear' ? '여론은 바뀌었다.<br>쓴 사람은 단 한 명이었다.' : '살아남는 키보드는 하나뿐이다.<br>이번엔 당신이 아니었다.';
@@ -1878,7 +1935,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.10';
+const VERSION = '0.11';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},
