@@ -433,7 +433,9 @@ const pick = a => a[Math.floor(Math.random()*a.length)];
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
-const won = n => n >= 100000000 ? `${(n/100000000).toLocaleString(undefined,{maximumFractionDigits:2})}억원` : n >= 10000 ? `${Math.round(n/10000).toLocaleString()}만원` : `${n.toLocaleString()}원`;
+// 1억 미만은 원 단위까지 정확히 (예: 3만 3,700원). 반올림하면 청구서가 딱 맞는데 모자라 보이는 일이 생김
+const won = n => { n = Math.round(n); if (n >= 100000000) return `${(n/100000000).toLocaleString(undefined,{maximumFractionDigits:2})}억원`;
+  if (n >= 10000){ const m = Math.floor(n/10000), r = n % 10000; return `${m.toLocaleString()}만${r ? ' ' + r.toLocaleString() : ''}원`; } return `${n.toLocaleString()}원`; };
 
 /* 같은 문장이 한 바퀴 돌기 전엔 다시 안 나오는 주머니 */
 class Bag{
@@ -441,6 +443,13 @@ class Bag{
   next(){
     if (!this.q.length){ this.q = shuffle(this.src.slice()); if (this.q.length>1 && this.q[this.q.length-1]===this.last) this.q.unshift(this.q.pop()); }
     return this.last = this.q.pop();
+  }
+  // 조건에 맞는 문장을 우선 꺼냄. 없으면 아무거나
+  nextFit(ok){
+    if (!this.q.length) this.q = shuffle(this.src.slice());
+    for (let i = this.q.length - 1; i >= 0; i--) if (ok(this.q[i])) return this.last = this.q.splice(i, 1)[0];
+    const all = this.src.filter(t => ok(t) && t !== this.last); if (all.length) return this.last = pick(all);
+    return this.next();
   }
 }
 
@@ -721,7 +730,7 @@ const SKINS = {
     foeNick:()=> Math.random()<.7 ? `ㅇㅇ(${R(1,223)}.${R(1,255)})` : null,
     nick:n=>{ const m = n.match(/^(.*?)(\(\d+\.\d+\))$/); return m ? `${esc(m[1])}<span class="ip">${m[2]}</span>` : `${esc(n)}<span class="gonik" title="고정닉">◆</span>`; },
     newbie:'뉴비인데 댓글 보니까 생각 바뀜 ㅇㅇ',
-    my:{ divert:['근데 갤 왜 이럼?','저녁 뭐 먹음 다들','념글 보고 옴 ㅋㅋ','알바 타령하는 놈이 알바임 ㅇㅇ','다들 진정하고 짤이나 보셈','갤 오늘따라 왜 이렇게 뜨거움'] },
+    my:{ divert:['근데 갤 왜 이럼?','저녁 뭐 먹음 다들','념글 보고 옴 ㅋㅋ','근데 이 글 몇 시에 올라온 거임','다들 진정하고 짤이나 보셈','갤 오늘따라 왜 이렇게 뜨거움'] },
     foe:{ sus:['유동 IP 왜 다 비슷함?','이거 다 한 놈 같은데','추천 수 주작 아님?','IP 뒷자리 똑같은 거 실화냐','방금 그 고닉 부계 아님?'] }},
   forum:{name:'겜톡', place:'게임 커뮤니티', url:'gemtalk.forum/free', cnt:'댓글',
     head:d=>`<div class="b-top"><b class="logo">겜톡</b><span>${esc(d.h.board)}</span></div>
@@ -785,11 +794,10 @@ const TOOLS = [
   {id:'alt',    icon:'🎭', name:'부계정 생성',        lv:1, cost:0,        desc:'새 말투 계정 +1 · 턴을 쓰지 않음(한 턴에 한 번) · 의심 ▲'},
   {id:'lurk',   icon:'💤', name:'잠수 타기',          lv:1, cost:0,        desc:'의심 ▼▼'},
   {id:'meme',   icon:'🖼️', name:'짤 외주',            lv:2, cost:10000,    desc:'짤 장인에게 의뢰 · 여론 ▲ · 🔥/👥 하나 웃겨서 제압'},
-  {id:'macro',  icon:'🤖', name:'매크로 돌리기',      lv:2, cost:30000,    desc:'추천 폭격 · 여론 ▲▲ · 상대 댓글 하나 묻기 · 의심 ▲▲▲▲'},
+  {id:'macro',  icon:'🤖', name:'매크로 돌리기',      lv:2, cost:30000,    desc:'추천 폭격 · 여론 ▲▲ · 고른 상대 댓글 묻기(안 고르면 맨 위) · 의심 ▲▲▲▲'},
   {id:'youtube',icon:'📹', name:'유튜버 바이럴 영상', lv:3, cost:100000,   desc:'3턴 동안 여론이 계속 오름'},
-  {id:'vtuber', icon:'🎙️', name:'버튜버 광고',        lv:3, cost:200000,   desc:'팬덤 투입 · 👥동조형을 전부 우리 편으로 · 의뢰당 1회', once:true},
   {id:'admin',  icon:'🔑', name:'커뮤 운영자 매수',   lv:4, cost:500000,   desc:'의심 0 · 3턴 동안 정지 면제'},
-  {id:'press',  icon:'🗞️', name:'언론사 매수',        lv:5, cost:1000000,  desc:'"단독" 기사 · 🧠팩트형 전부 제압 · 의심 ▼ · 의뢰당 1회', once:true},
+  {id:'press',  icon:'🗞️', name:'언론사 매수',        lv:5, cost:1000000,  desc:'"단독" 기사 · 🧠팩트형 최대 2개 제압 · 의심 ▼ · 의뢰당 1회', once:true},
   {id:'bots',   icon:'🛰️', name:'해외 봇 농장',       lv:5, cost:2000000,  desc:'번역체 계정 +3 · 의심 ▲▲'},
   {id:'poll',   icon:'📊', name:'여론조사 업체 의뢰', lv:6, cost:3000000,  desc:'"조사 결과" 발표 · 여론 ▲▲▲▲ · 의뢰당 1회', once:true},
   {id:'portal', icon:'🔍', name:'포털 검색어 조작',   lv:7, cost:8000000,  desc:'상대 댓글 전부 묻힘 · 의심 ▲▲ · 의뢰당 1회', once:true},
@@ -797,8 +805,8 @@ const TOOLS = [
 
 const TOOL_FX = {
   post:[['여론▲',1],['의심▲',0]], boost:[['여론▲×계정',1],['의심▲▲▲',0]], alt:[['계정+1',1],['턴 안 씀',1],['의심▲',0]], lurk:[['의심▼▼',1],['1턴 쉼',2]],
-  meme:[['여론▲',1],['🔥/👥 1개 제압',1],['의심 조금',0]], macro:[['여론▲▲',1],['상대 1개 묻기',1],['의심▲▲▲▲',0]], youtube:[['여론▲ ×3턴',1]], vtuber:[['👥 일괄 제압',1],['여론▲',1],['의뢰당 1회',2]],
-  admin:[['의심 0',1],['정지 면제 3턴',1]], press:[['🧠 일괄 제압',1],['의심▼',1],['의뢰당 1회',2]], bots:[['계정+3',1],['의심▲▲',0]],
+  meme:[['여론▲',1],['🔥/👥 1개 제압',1],['의심 조금',0]], macro:[['여론▲▲',1],['고른 상대 묻기',1],['의심▲▲▲▲',0]], youtube:[['여론▲ ×3턴',1]],
+  admin:[['의심 0',1],['정지 면제 3턴',1]], press:[['🧠 최대 2개 제압',1],['의심▼',1],['의뢰당 1회',2]], bots:[['계정+3',1],['의심▲▲',0]],
   poll:[['여론▲▲▲▲',1],['의심▲',0],['의뢰당 1회',2]], portal:[['상대 전부 묻기',1],['의심▲▲',0],['의뢰당 1회',2]],
 };
 /* ---------- 플랫폼 전용 행동 (무료, 쓰고 나면 3턴 쿨타임) ---------- */
@@ -834,7 +842,7 @@ const chip = ([t,k]) => `<span class="fx fx${k}">${t}</span>`;
 const MY_LINES = {
   source:['{X} 관련 논문 있음. 링크는 귀찮아서 생략','하버드에서 연구했는데 결론이 {S} 승리임','통계청 자료 보면 {X} 쪽이 압도적임 (찾아보셈)','우리 삼촌이 이 분야 전문가인데 {S} 말이 맞대','{Y} 주장은 2019년에 이미 반박됨','유튜브에 교수님이 {X} 맞다고 함','위키 보셈. 내가 어제 고쳐놨음'],
   mock:['{F} 또 긁혔네ㅋㅋㅋ','발작 버튼 눌렸네 ㅋㅋ','그래서 {Y}는 언제 이김?','3줄 요약 부탁ㅋㅋ','진지 빨지 마셈','댓글 길이가 패배 선언문임','{Y} 좋아하는 거 부모님도 아심?'],
-  divert:['근데 오늘 날씨 미쳤다','알바 타령 하는 사람이 알바일 확률 99%','다들 진정하고 밥이나 먹자','주말에 뭐 하세요 다들','그건 그렇고 다들 저녁 뭐 드심?','이 얘기 어제도 하지 않았나요?'],
+  divert:['근데 오늘 날씨 미쳤다','이 얘기 아까부터 계속 도는 듯','다들 진정하고 밥이나 먹자','주말에 뭐 하세요 다들','그건 그렇고 다들 저녁 뭐 드심?','이 얘기 어제도 하지 않았나요?'],
   empathy:['저도 처음엔 {Y} 쪽이었는데… 생각이 바뀌더라고요','다 이해해요. 한 번만 {X} 입장에서 봐주세요','싸우지 마세요. 결국 {X}가 답인 것 같아요','저 같은 평범한 사람도 {S} 편이에요','혹시 {X} 제대로 겪어보셨어요? 저는 인생 바뀜','말씀 공감해요. 근데 그래서 {X}가 더 필요한 거 아닐까요'],
   post:['[정보] {X}가 옳은 이유 7가지','{F} 논리 정리해봄 (웃김 주의)','솔직히 {Y} 편드는 사람 특징.jpg','오늘부터 {S} 하기로 함','[후기] {X} 일주일 해본 결과','{F}가 절대 말 안 하는 진실'],
 };
@@ -858,7 +866,7 @@ const REPLY = {
             empathy:['…그렇게 말하니까 좀 누그러지긴 하네. 그래도 빡침','착한 척 오지네. 근데 반은 맞는 말임','알았어. 근데 아직 열받는 건 맞음'] },
     sus:  { source:['자료는 그럴듯한데 니 계정 가입일 어제던데? ㅋㅋ','출처 칼같이 가져오는 거 보니 더 수상함. 일반인은 이렇게 안 함','링크는 봤고 니 활동 기록도 봤다 ㅋㅋ'],
             mock:['긁히는 거 보니 찔리나 보네 ㅋㅋㅋ','캡처 완료. 알바 맞네 시급 얼마냐','반응 속도 보소 ㅋㅋ 대기 타고 있었냐','니 말투 위에 댓글이랑 똑같음 ㅋㅋ 같은 놈이네'],
-            divert:['알바면 저렇게 아무 말이나 안 하지 ㅋㅋ 내가 과했다','저녁 메뉴 묻는 알바는 없겠지… ㅇㅋ 넘어감','ㅋㅋ 너무 해맑아서 의심한 내가 민망함','아 됐다 알바 찾기도 지친다','ㅇㅋ 일단 넘어감. 근데 지켜봄'],
+            divert:['알바면 저렇게 아무 말이나 안 하지 ㅋㅋ 내가 과했다','이렇게 해맑은 알바는 없겠지… ㅇㅋ 넘어감','ㅋㅋ 너무 해맑아서 의심한 내가 민망함','아 됐다 알바 찾기도 지친다','ㅇㅋ 일단 넘어감. 근데 지켜봄'],
             empathy:['말은 착하게 하네… 그게 더 수상함','이 친절함 어디서 많이 봤는데? 고객센터?','음 일단 지켜본다'] },
     crowd:{ source:['오 그런 자료도 있었어?','흠 그건 몰랐네. 근데 아직 아닌 듯','ㅇㅋ 반박 자료 나오면 다시 봄'],
             mock:['ㅋㅋㅋ 다들 이 사람 말투 봐라','우르르 몰려와서 조롱하는 거 보니 답 나왔네','이 댓글 캡처해서 퍼감 ㅋㅋ 박제','와 진짜 인성 봐라'],
@@ -1359,7 +1367,7 @@ const ROUND_POOL = [
         mock:['통합 선언 ㅋㅋ 선거 끝나면 다시 싸울 거면서','악수할 때 둘 다 눈 안 마주침','통합 좋아하는 사람 = 정치 모르는 사람'],
         empathy:['통합 바라는 마음 알죠. 근데 저쪽 지지자들은 생각 없을걸요','저도 싸우는 거 지겨운데 이번엔 저쪽이 너무했음','좋은 말인데… 저쪽이 먼저 사과해야 하지 않나요'],
         post:['통합 선언이 쇼인 이유 정리 🧵','저쪽 지지자들이 절대 말 안 하는 것']},
-      foes:{logic:['공동 선언문 원본 공개돼 있어요. 빠진 줄 없음','그 여론조사 출처가 해외 서버 사이트임','두 후보 연설 원본 보면 그런 말 한 적 없음'],
+      foes:{logic:['공동 선언문 원본 공개돼 있어요. 빠진 줄 없음','갈라치기 글 출처 따라가 보면 해외 서버 사이트임','역대 대선에서 공동 선언 나온 건 이번이 처음임'],
         anger:['모처럼 좋은 소식인데 왜 이렇게 초를 치냐','싸움 붙이는 계정들 진짜 질린다','누가 이득 보려고 이러는지 뻔함'],
         crowd:['#함께네모 RT','통합 선언 지지합니다','이번엔 좀 같이 가자'], sus:['이 계정들 띄어쓰기가 다 똑같이 틀림','이 계정들 새벽 3시에만 활동함. 시차 있는 곳?','프로필 소개가 번역투 그 자체','양쪽 편 다 드는 계정이 같은 사람임 ㅋㅋ']},
       events:[{t:'팀 계정 하나가 실수로 외국어로 글을 올렸다.', op:0, sus:14},{t:'양쪽 지지자들이 서로 욕하는 스레드가 트렌드에 올랐다. 의뢰인이 기뻐한다.', op:10, sus:4},{t:'플랫폼이 "해외 조직적 계정 1,200개 정지"를 발표했다.', op:-8, sus:10}],
@@ -1431,7 +1439,7 @@ const EVENTS = [
 ];
 
 /* ---------- 난이도 숫자 (여기만 고치면 전체 난이도가 바뀜) ---------- */
-const BAL = {
+const BAL = { pressMax:2, keepBudget:0.5,
   spawnMul: 2.2, spawnAdd: 0.35,   // 턴당 새 상대 댓글 수 = 의뢰 spawn × spawnMul + spawnAdd (소수점은 확률)
   maxOpen: 6,                      // 게시판에 동시에 떠 있을 수 있는 상대 댓글 수
   strongMul: 1.5,                  // 상성 정답일 때 여론 상승 배수 (예전엔 2)
@@ -1472,6 +1480,8 @@ const users = () => Math.max(3, Math.round(2417 * Math.pow(0.96, S.st.actions)))
 // 부계정 말투는 앞이나 뒤 한 군데에만. 문장이 이미 ㅋ·ㅇㅇ·…·문장부호로 끝나면 뒤에는 안 붙임
 // 말투가 문장과 안 맞으면(존댓말 문장에 반말 계정 등) 꾸밈을 붙이지 않음
 const isPolite = t => /(요|니다|니까|세요|죠)[^가-힣]*$/.test(t);
+// 계정 말투(#공손=존댓말, #음슴체·#냉소·#중2병=반말)에 맞는 문장을 먼저 고름
+const lineFor = (a, bag) => a.reg ? bag.nextFit(t => (a.reg === 'polite') === isPolite(t)) : bag.next();
 const voice = (a, core) => {
   if (a.reg && (a.reg === 'polite') !== isPolite(core)) return core;
   const r = Math.random(), ended = /[ㅋㅎㅇㅠ…!?.~)\]]$/.test(core);
@@ -1511,7 +1521,7 @@ function screenHow(){
       ${Object.keys(TACTICS).map(k=>`<span>${TACTICS[k].icon} ${TACTICS[k].name} → ${typeList(k)}에 강함${weakList(k)?' · '+weakList(k)+'엔 역효과':''}</span>`).join('')}
     </div>
     <p>3. 부계정마다 <b>말투</b>가 다릅니다. 같은 계정을 연달아 쓰면 의심받아요.</p>
-    <p>4. 의뢰를 성공하면 <b>레벨 업</b>. 더 큰 의뢰인이 찾아오고, 새 도구가 열립니다. 돈 드는 도구는 의뢰인이 준 <b>작전비</b>에서만 빠지고(내 지갑 돈은 못 씀), 남은 작전비는 당신 몫이에요. 비싼 도구는 의뢰당 한 번만 쓸 수 있어요.</p>
+    <p>4. 의뢰를 성공하면 <b>레벨 업</b>. 더 큰 의뢰인이 찾아오고, 새 도구가 열립니다. 돈 드는 도구는 의뢰인이 준 <b>작전비</b>에서만 빠지고(내 지갑 돈은 못 씀), 남은 작전비는 절반만 당신 몫이에요(나머지는 반납). 비싼 도구는 의뢰당 한 번만 쓸 수 있어요.</p>
     <p>+ 선택 장면이 지나고 목표를 넘겼다면 <b>지금 정산하기</b>로 일찍 끝낼 수 있어요. 남은 턴만큼 보너스가 붙어요.</p>
     <p>+ 다음 의뢰로 넘어갈 때마다 <b>청구서</b>가 와요. 많이 벌수록 씀씀이도 커져요.</p>
     <p>+ 게시판마다 <b>그 플랫폼 전용 행동</b>이 하나씩 있어요(념글 보내기, 별점 1점 테러, 싫어요 폭격 등). 무료지만 턴을 하나 쓰고, 한 번 쓰면 3턴을 기다려야 해요.</p>
@@ -1691,13 +1701,13 @@ function reply(t){
   const f = S.open.find(x=>x.id===S.sel); if (!f || S.busy) return;
   const T = TACTICS[t], m = T.vs[f.type], a = useAcc();
   S.st.actions++; S.st.replies++;
-  const myLine = B.my[t].next(); S.myLog.push({stage:S.r, text:myLine});
+  const myLine = lineFor(a, B.my[t]); S.myLog.push({stage:S.r, text:myLine});
   addReply(f, a.nick, voice(a, myLine), 'me');
   if (m === 0){
     S.op -= 4; S.sus += T.sus + 6; S.st.back++;
     addReply(f, f.nick, B.rep[f.type][t].next(), 'foe');
     if (Math.random() < BAL.pileOn) spawnFoe('crowd', B.rep.pile.next());
-    line('sys', `역효과! ${FT[f.type].name}한테 ${T.name}은 안 먹힌다.`);
+    line('sys', `역효과! ${FT[f.type].name}한테 ${josa(T.name,'은','는')} 안 먹힌다.`);
   } else {
     f.hp -= m; S.op += T.op * (m === 2 ? BAL.strongMul : 1); S.sus += T.sus + S.r * BAL.susPerStage;
     if (t==='divert' && f.type==='sus') S.sus -= 8;
@@ -1739,11 +1749,11 @@ function useTool(id){
   if (t.cost){ S.budget -= t.cost; S.st.tools++; S.st.spent += t.cost; }
   const buy = msg => line('buy', `💸 -${won(t.cost)} · ${msg}`);
   switch(id){
-    case 'post': { const a = useAcc(); S.op += 6; S.sus += 5; const pl = B.my.post.next(); S.myLog.push({stage:S.r, text:pl}); feedAdd(commentEl(a.nick, '[새 글] ' + voice(a, pl), 'me')); break; }
+    case 'post': { const a = useAcc(); S.op += 6; S.sus += 5; const pl = lineFor(a, B.my.post); S.myLog.push({stage:S.r, text:pl}); feedAdd(commentEl(a.nick, '[새 글] ' + voice(a, pl), 'me')); break; }
     case 'boost': S.op += 4*S.accs.length; S.sus += 15; S.st.boosts++; line('evt', `👍 우리 쪽 댓글 추천 수가 갑자기 ${S.accs.length*37}개 올랐다.`); break;
     case 'alt': {
       const a = mkAcc(S.usedPersonas++); S.accs.push(a); S.sus += 4; S.st.alts++;
-      feedAdd(commentEl(a.nick, voice(a, SK().newbie || '오늘 가입했어요. 근데 댓글 읽어보니 생각이 바뀌네요'), 'me')); S.altTurn = S.turn; hud(); return; }
+      feedAdd(commentEl(a.nick, voice(a, a.reg === 'casual' ? (SK().newbie || '오늘 가입함. 근데 댓글 읽어보니 생각 바뀜') : a.reg === 'polite' ? '오늘 가입했어요. 근데 댓글 읽어보니 생각이 바뀌네요' : (SK().newbie || '오늘 가입했어요. 근데 댓글 읽어보니 생각이 바뀌네요')), 'me')); S.altTurn = S.turn; hud(); return; }
     case 'lurk': S.sus -= 20; line('evt', pick(['💤 로그아웃하고 컵라면을 먹었다.','💤 유튜브 쇼츠를 40분 봤다.','💤 낮잠을 잤다. 꿈에서도 댓글을 달았다.'])); break;
     case 'meme': {
       S.op += 14; S.sus += 3;
@@ -1752,20 +1762,15 @@ function useTool(id){
       buy(pick(['짤 장인이 만든 짤이 인기글에 올라갔다.','외주 짤이 생각보다 웃기다. 퍼지는 중.','짤 장인: "수정은 2번까지 무료입니다"']) + (f ? ' 화내던 사람 하나가 웃어버렸다.' : '')); break; }
     case 'macro': {
       S.op += 20; S.sus += 22;
-      const f = S.open[0];
+      const f = S.open.find(x => x.id === S.sel) || S.open[0];
       if (f) silence(f, null, '(추천 수에 밀려 아래로 내려간 댓글)');
       buy('매크로가 추천을 1,200개 눌렀다. 1초 만에.' + (f ? ' 상대 댓글 하나가 아래로 묻혔다.' : '')); break; }
     case 'youtube': S.op += 6; S.sus += 3; S.buffs.push({n:3, op:8}); buy(`구독자 80만 유튜버가 "${d.Y}, 솔직히 말씀드립니다" 영상을 올렸다. (유료 광고 표시 없음)`); break;
-    case 'vtuber': {
-      const crowd = S.open.filter(f=>f.type==='crowd');
-      crowd.forEach(f => silence(f, '버튜버 팬클럽', pick(['방장님이 그렇다면 그런 거임','오시가 추천했으면 맞음','💜💜💜'])));
-      S.op += 6 + crowd.length*6; S.sus += 4;
-      buy(`버튜버가 방송 중에 슬쩍 우리 편을 들었다. 팬덤이 몰려와 동조형 ${crowd.length}명을 덮었다.`); break; }
     case 'admin': S.sus = 0; S.shield = 3; buy('운영자에게 기프티콘을 보냈다. 운영자: "음… 잠깐 자리 비우겠습니다."'); break;
     case 'press': {
-      const logic = S.open.filter(f=>f.type==='logic');
+      const logic = S.open.filter(f=>f.type==='logic').slice(0, BAL.pressMax);
       logic.forEach(f => silence(f, null, pick(['…기사로 나왔으면 맞겠지','언론이 그렇다니까 뭐','(삭제된 댓글입니다)'])));
-      S.op += 12 + logic.length*5; S.sus = Math.max(0, S.sus - 15);
+      S.op += 6 + logic.length*5; S.sus = Math.max(0, S.sus - 15);
       buy(`[단독] "${d.Y}, 알고 보니…" 기사가 포털 메인에 걸렸다. 팩트형 ${logic.length}명이 조용해졌다.`); break; }
     case 'bots': {
       for (let i=0;i<3;i++){ const nick = BOT_NAMES[S.botN++ % BOT_NAMES.length] + (S.botN>BOT_NAMES.length ? S.botN : ''); S.accs.push({...BOT_PERSONA, nick, used:-99}); }
@@ -1899,7 +1904,7 @@ function screenResult(){
   const win = S.op >= d.target;
   const last = S.r === ROUNDS.length - 1;
   let pay = 0, over = 0, kept = 0, early = 0;
-  if (win){ over = Math.round((S.op - d.target) * d.pay / 50); pay = d.pay; kept = S.budget; early = S.early || 0;
+  if (win){ over = Math.round((S.op - d.target) * d.pay / 50); pay = d.pay; kept = Math.round(S.budget * BAL.keepBudget / 1000) * 1000; early = S.early || 0;
     S.money += pay + over + kept + early; S.st.wins++;
     S.lastIncome = pay + over + kept + early + (S.attemptBonus || 0); }
   const news = last ? (win ? d.newsWin : d.newsLose) : (win ? d.news : null);
@@ -1914,7 +1919,7 @@ function screenResult(){
         <span class="bi"><span>성공 보수</span><b>+${won(pay)}</b></span>
         ${over ? `<span class="bi"><span>초과 달성 보너스</span><b>+${won(over)}</b></span>` : ''}
         ${early ? `<span class="bi"><span>조기 정산 보너스</span><b>+${won(early)}</b></span>` : ''}
-        ${kept ? `<span class="bi"><span>남은 작전비</span><b>+${won(kept)}</b></span>` : ''}
+        ${kept ? `<span class="bi"><span>남은 작전비 (절반은 의뢰인에게 반납)</span><b>+${won(kept)}</b></span>` : ''}
         ${S.attemptBonus ? `<span class="bi"><span>선 넘기 보너스 (받아 둔 돈)</span><b>+${won(S.attemptBonus)}</b></span>` : ''}
         <span class="bi tot"><span>이번 달 수입</span><b>${won(pay + over + kept + early + (S.attemptBonus||0))}</b></span>` : '<span class="big">+0원</span>'}</div>
     ${news ? `<div class="memo"><span class="k">${esc(news.k)}</span><span class="big">${esc(news.t)}</span><span>${esc(news.q)}</span></div>` : ''}
@@ -2031,7 +2036,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.15.2';
+const VERSION = '0.16';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},
