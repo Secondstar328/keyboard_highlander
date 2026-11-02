@@ -155,7 +155,7 @@ canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;b
 .board{--b-bg:#fff;--b-ink:#222;--b-dim:#777;--b-line:#e3e3e3;--b-top:#333;--b-topink:#fff;--b-acc:#3b4890;--b-me:#c2410c;--b-foe:#1d4ed8;--b-card:#f6f7f9;--b-sel:#fff6cc;
   --b-font:"Nanum Gothic","Apple SD Gothic Neo",sans-serif;
   background:var(--b-bg);color:var(--b-ink);font-family:var(--b-font);font-size:14px;line-height:1.55;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.board .addr{background:#d6d6d6;color:#333;display:flex;gap:10px;align-items:center;padding:4px 8px;font-size:12px;font-family:var(--f-body)}
+.board .addr{background:#d6d6d6;color:#333;display:flex;gap:10px;align-items:center;padding:4px 8px;font-size:12px;font-family:system-ui,-apple-system,"Segoe UI","Nanum Gothic",sans-serif}
 .board .addr .u{background:#fff;border:1px solid #999;padding:1px 8px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .board .addr .dots{color:#e0464f;letter-spacing:2px}
 .b-top{background:var(--b-top);color:var(--b-topink);padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:13px}
@@ -1166,7 +1166,7 @@ const ROUND_POOL = [
         b:{l:'로그아웃한다', op:-10, sus:-20, karma:0, log:'당신은 한참 화면을 보다가 노트북을 덮었다.'}} },
     // 모티브: 대형 프랜차이즈 입점 후 동네 노포를 노린 리뷰 조작·별점 테러
     { tier:'프랜차이즈', skin:'map', client:'고깃집 프랜차이즈 「고기왕국」 본사', ask:'"새 매장 옆에 30년 된 정육식당이 있어요. 손님이 그쪽으로만 가요. 리뷰 좀 손봐 주세요."',
-      url:'noranmap.place/halmae-meat', art:'butcher', h:{place:'할매 정육식당', desc:'고기 · 네모시 동글동 · 정육점 겸 식당 · 30년째'}, thumb:'shop', thumbAlt:'정육식당 도트 그림',
+      url:'noranmap.place/halmae-jeongyuk', art:'butcher', h:{place:'할매 정육식당', desc:'고기 · 네모시 동글동 · 정육점 겸 식당 · 30년째'}, thumb:'shop', thumbAlt:'정육식당 도트 그림',
       title:'할매 정육식당 방문자 리뷰', S:'본사', F:'단골들', X:'고기왕국', Y:'할매 정육식당', loss:'30년 된 정육식당 불은 꺼졌다',
       start:30, target:64, turns:12, pay:500000, budget:300000, spawn:.5, types:{logic:2,anger:2,sus:2,crowd:3}, fading:true,
       extraNicks:['동네주민','3대째단골','회식장인'],
@@ -1981,7 +1981,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.13';
+const VERSION = '0.13.1';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},
