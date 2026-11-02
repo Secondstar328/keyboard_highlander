@@ -11,7 +11,7 @@
 
 ## 플레이 방법
 
-- **웹에서 바로 플레이: https://secondstar328.github.io/keyboard_highlander/**
+- **웹에서 바로 플레이: https://keyboard-highlander.pages.dev**
 
 - `site/index.html`을 내려받아 브라우저로 열면 바로 시작돼요.
 - 저장소를 공개하고 GitHub Pages를 켜면 웹 주소로도 플레이할 수 있어요 (아래 "웹에 올리기" 참고).
@@ -96,11 +96,11 @@
 - **정치 균형:** 정치 소재는 가상 정당 양쪽에 하나씩 나눠서, 특정 정당을 겨냥하지 않아요.
 - **풍자가 목적:** 조작 방법을 알려주는 게 아니라, 여론이 얼마나 쉽게 흔들리는지 보여주는 게임입니다.
 
-## 웹에 올리기 (GitHub Pages)
+## 배포
 
-1. 저장소 **Settings → General** 맨 아래에서 저장소를 **Public**으로 바꿉니다. (무료 계정은 공개 저장소만 Pages를 쓸 수 있어요.)
-2. **Settings → Pages**에서 Source를 **Deploy from a branch**, Branch를 **main / (root)**로 고르고 Save를 누릅니다.
-3. 1~2분 뒤 `https://secondstar328.github.io/keyboard_highlander/` 주소에서 플레이할 수 있어요.
+- **Cloudflare Pages**가 `site/` 폴더만 공개해요 (빌드 명령 없음, 출력 폴더 `site`).
+- `main` 브랜치에 올리면 1~2분 안에 https://keyboard-highlander.pages.dev 에 자동 반영돼요.
+- 저장소 맨 위 `index.html`은 옛 GitHub Pages 주소로 들어온 사람을 `site/`로 넘겨주는 이동용 파일이에요.
 
 ## 파일 구조
 
