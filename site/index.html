@@ -277,6 +277,15 @@ canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;b
 .ending p.sig{color:var(--dim);font-size:13px}
 .ending p.sig b{color:var(--acc)}
 
+/* 퍼 나르기 · 청구서 */
+.board .c.ally .n{color:var(--b-me)}
+.board .tag.echo{background:#2e9e5b;color:#fff}
+.memo.bill{border-left-color:var(--str);background:#e6b67312}
+.memo.bill .k{color:var(--str)}
+.memo.bill .bi{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.memo.bill .bi.tot{border-top:1px dashed var(--line);padding-top:4px}
+.memo .warnline{color:var(--warn);font-size:13px}
+
 /* 엔딩 리뷰 */
 .survey{display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);border-radius:8px;padding:14px;background:#ffffff06}
 .survey h2{font-size:17px}
@@ -689,7 +698,7 @@ const SKINS = {
     head:d=>`<div class="b-top"><b class="logo">노랑지도</b><span class="search">🔍 ${esc(d.h.place)}</span></div>
       <div class="b-place"><canvas class="art" id="gimg" width="256" height="160" aria-label="${esc(d.thumbAlt||d.title)}"></canvas><div><b class="pn">${esc(d.h.place)}</b><div class="m">${esc(d.h.desc)}</div><div class="rate" id="bstat"></div></div></div>`,
     stat:()=>{ const v = 5 - 3.6*S.op/100, n = Math.round(v); return `<span class="star">${'★'.repeat(n)}</span>${'☆'.repeat(5-n)} ${v.toFixed(1)}`; },
-    meta:side=> side==='me' ? `<span class="star">★</span>☆☆☆☆ · 방문 1회` : `<span class="star">★★★★${Math.random()<.7?'★':'☆'}</span> · 방문 ${R(2,99)}회`},
+    meta:side=> side==='me' || side==='ally' ? `<span class="star">★</span>☆☆☆☆ · 방문 1회` : `<span class="star">★★★★${Math.random()<.7?'★':'☆'}</span> · 방문 ${R(2,99)}회`},
   video:{name:'MeTube', place:'영상 댓글창', url:'metube.video', cnt:'댓글', thumb:'phone',
     head:d=>`<div class="b-top"><b class="logo"><span class="play">▶</span> MeTube</b><span>🔍</span></div>
       <div class="player"><canvas class="art" id="gimg" width="256" height="160" aria-label="${esc(d.thumbAlt||d.title)}"></canvas><span class="dur">12:34</span></div>
@@ -1339,7 +1348,11 @@ function fillDeep(v, map){
   return v;
 }
 let FRIEND = rollFriend();
-const rollRounds = () => { const map = {G:FRIEND, GL:friendLabel(), P:rollPlayer()}; return ROUND_POOL.map(r => fillDeep(Array.isArray(r) ? pick(r) : r, map)); };
+const rollRounds = () => { const map = {G:FRIEND, GL:friendLabel(), P:rollPlayer()};
+  return ROUND_POOL.map(r => { const d = fillDeep(Array.isArray(r) ? pick(r) : r, map);
+    if (d.dilemma && !d.dilemma.a.money) d.dilemma.a.money = Math.max(10000, Math.round(d.pay * 0.6 / 1000) * 1000);
+    if (d.dilemma) d.dilemma.b.op = Math.max(d.dilemma.b.op, -3); // 거절하면 보상은 없지만 벌은 작게
+    return d; }); };
 let ROUNDS = rollRounds();
 const EVENTS = [
   {t:'팔로워 많은 유명 계정이 우리 편을 들었다!', op:10, sus:0},
@@ -1356,7 +1369,9 @@ const BAL = {
   spawnMul: 2.2, spawnAdd: 0.35,   // 턴당 새 상대 댓글 수 = 의뢰 spawn × spawnMul + spawnAdd (소수점은 확률)
   maxOpen: 6,                      // 게시판에 동시에 떠 있을 수 있는 상대 댓글 수
   strongMul: 1.5,                  // 상성 정답일 때 여론 상승 배수 (예전엔 2)
-  pileOn: 0.35,                    // 역효과 때 구경꾼 댓글이 붙을 확률
+  pileOn: 0.35,
+  echoChance: 0.35, echoOp: 4,      // 설득한 상대(동조형은 항상, 나머지는 확률)가 2턴 뒤 내 문장을 퍼 나름
+  badgeUntil: 1,                   // 이 단계(0부터)까지만 추천/역효과 배지 표시                    // 역효과 때 구경꾼 댓글이 붙을 확률
   susPerStage: 0.5,                  // 단계가 오를수록 답글 하나당 의심도 추가
 };
 
@@ -1366,7 +1381,7 @@ function newGame(){
   ROUNDS = rollRounds();
   S = { r:0, op:0, sus:0, money:0, budget:0, karma:0, turn:0, sel:null, acc:0, busy:false, open:[], fid:0, fails:0,
         buffs:[], shield:0, accs:[mkAcc(0), mkAcc(1)], usedPersonas:2, botN:0,
-        st:{replies:0, strong:0, back:0, tools:0, spent:0, boosts:0, alts:2, bans:0, wins:0, actions:0} };
+        st:{replies:0, strong:0, back:0, tools:0, spent:0, boosts:0, alts:2, bans:0, wins:0, actions:0, echo:0, bills:0, sold:0} };
 }
 const level = () => S.r + 1;
 function mkAcc(i){ const p = PERSONAS[i % PERSONAS.length]; return {...p, nick: i<PERSONAS.length ? p.nick : p.nick+(i+1), used:-99}; }
@@ -1459,7 +1474,7 @@ function startRound(){
   const d = ROUNDS[S.r];
   makeBags();
   S.op = d.start; S.sus = Math.max(0, S.sus - 30); S.turn = 0; S.busy = false; S.open = []; S.sel = null;
-  S.budget = d.budget; S.buffs = []; S.shield = 0; S.skcd = 0;
+  S.budget = d.budget; S.buffs = []; S.shield = 0; S.skcd = 0; S.echo = [];
   $('#app').innerHTML = `
   <div class="win" id="hudwin"><div class="bar"><span>의뢰_0${S.r+1}.md</span><span class="ghost">작업일지.md</span><span>Lv.${level()}</span></div>
     <div class="body stack">
@@ -1571,10 +1586,11 @@ function hud(){
   document.querySelectorAll('.chip').forEach(c => c.onclick = () => { S.acc = +c.dataset.i; hud(); });
   const f = S.open.find(x=>x.id===S.sel);
   $('#tgt').className = f ? 'tgt on' : 'tgt';
-  $('#tgt').innerHTML = f ? `🎯 대상 <b>@${esc(f.nick)}</b> <span class="tag2">${FT[f.type].icon} ${FT[f.type].name}</span> <span class="cmt">// 초록 타일이 정답</span>` : '👆 게시판에서 <b>상대 댓글</b>을 눌러 대상을 고르세요';
+  $('#tgt').innerHTML = f ? `🎯 대상 <b>@${esc(f.nick)}</b> <span class="tag2">${FT[f.type].icon} ${FT[f.type].name}</span> <span class="cmt">${S.r <= BAL.badgeUntil ? '// 초록 타일이 정답' : '// 타일의 상성 칩을 보고 직접 고르기'}</span>` : '👆 게시판에서 <b>상대 댓글</b>을 눌러 대상을 고르세요';
   document.querySelectorAll('[data-t]').forEach(b => { const v = f ? TACTICS[b.dataset.t].vs[f.type] : -1;
-    b.disabled = !f || S.busy; b.classList.toggle('good', v===2); b.classList.toggle('bad', v===0);
-    b.querySelector('.badge').textContent = v===2 ? '추천' : v===0 ? '역효과' : ''; });
+    const hint = S.r <= BAL.badgeUntil;
+    b.disabled = !f || S.busy; b.classList.toggle('good', hint && v===2); b.classList.toggle('bad', hint && v===0);
+    b.querySelector('.badge').textContent = !hint ? '' : v===2 ? '추천' : v===0 ? '역효과' : ''; });
   const sa = $('#skinact'); if (sa){ sa.disabled = S.busy || S.skcd > 0; sa.classList.toggle('poor', S.skcd > 0); $('#skincd').textContent = S.skcd > 0 ? `⏳ ${S.skcd}턴 뒤 사용 가능` : '✨ 사용 가능'; }
   document.querySelectorAll('[data-g]').forEach(b => { const t = TOOLS.find(x=>x.id===b.dataset.g); const poor = t.cost>S.budget;
     b.disabled = S.busy || t.lv>level() || poor; b.classList.toggle('poor', poor); if (t.cost) b.querySelector('.price').textContent = poor ? '💸 작전비 부족' : '💰 ' + won(t.cost); });
@@ -1591,7 +1607,8 @@ function reply(t){
   const f = S.open.find(x=>x.id===S.sel); if (!f || S.busy) return;
   const T = TACTICS[t], m = T.vs[f.type], a = useAcc();
   S.st.actions++; S.st.replies++;
-  addReply(f, a.nick, voice(a, B.my[t].next()), 'me');
+  const myLine = B.my[t].next();
+  addReply(f, a.nick, voice(a, myLine), 'me');
   if (m === 0){
     S.op -= 4; S.sus += T.sus + 6; S.st.back++;
     addReply(f, f.nick, B.rep[f.type][t].next(), 'foe');
@@ -1601,7 +1618,8 @@ function reply(t){
     f.hp -= m; S.op += T.op * (m === 2 ? BAL.strongMul : 1); S.sus += T.sus + S.r * BAL.susPerStage;
     if (t==='divert' && f.type==='sus') S.sus -= 8;
     if (m===2) S.st.strong++;
-    if (f.hp <= 0) silence(f, null, m === 2 ? B.rep[f.type][t].next() : B.rep.give[f.type].next());
+    if (f.hp <= 0){ silence(f, null, m === 2 ? B.rep[f.type][t].next() : B.rep.give[f.type].next());
+      if (f.type === 'crowd' || Math.random() < BAL.echoChance) S.echo.push({nick:f.nick, text:myLine, due:S.turn + 2}); }
     else { addReply(f, f.nick, B.rep[f.type][t].next(), 'foe'); drawHp(f); }
   }
   S.sel = null;
@@ -1673,6 +1691,13 @@ function endTurn(){
   setTimeout(()=>{
     S.open.forEach(f => { S.op -= FT[f.type].drain; if (f.type==='sus') S.sus += 3; });
     S.buffs.forEach(b => { S.op += b.op; b.n--; }); S.buffs = S.buffs.filter(b=>b.n>0);
+    // 설득당한 사람이 내 문장을 그대로 퍼 나름
+    S.echo.filter(e => e.due <= S.turn).forEach(e => {
+      const el = commentEl(e.nick, e.text, 'ally');
+      el.querySelector('.n').insertAdjacentHTML('beforeend', ' <span class="tag echo">🔁 퍼 나름</span>');
+      feedAdd(el); S.op += BAL.echoOp; S.st.echo++;
+    });
+    S.echo = S.echo.filter(e => e.due > S.turn);
     const rate = d.fading ? d.spawn * (1 - 0.5 * S.turn/d.turns) : d.spawn;
     const x = rate * BAL.spawnMul + BAL.spawnAdd; for (let i = 0; i < Math.floor(x); i++) spawnFoe(); if (Math.random() < x % 1) spawnFoe();
     if (d.fading && S.turn === 8) line('evt', '⚡ 단골 몇 명이 "이제 리뷰 안 볼래요"라고 남기고 떠났다.');
@@ -1761,7 +1786,25 @@ function screenResult(){
   };
 }
 
+/* 다음 의뢰로 넘어갈 때마다 오는 청구서. 버는 만큼 생활 수준도 올라간다 (index = 새로 시작할 단계) */
+const BILLS = [null,
+  [['월세 부족분', 15000]],
+  [['밀린 카드값', 40000], ['새 모니터 할부', 30000]],
+  [['월세', 100000], ['게이밍 의자 할부', 60000]],
+  [['외제차 리스', 300000], ['월세', 150000]],
+  [['강남 오피스텔 월세', 1000000], ['명품 시계 할부', 1000000]],
+  [['변호사 선임비 (혹시 몰라서)', 5000000], ['오피스텔 월세', 1000000]],
+];
+function payBills(){
+  const items = BILLS[S.r] || [], total = items.reduce((a,[,v])=>a+v, 0), before = S.money;
+  let sold = null;
+  if (S.money >= total){ S.money -= total; }
+  else { if (S.accs.length > 1){ sold = S.accs.pop(); S.st.sold++; } S.money = 0; }
+  S.st.bills += Math.min(before, total);
+  return {items, total, before, sold};
+}
 function screenLevelUp(){
+  const bill = payBills();
   const nu = TOOLS.filter(t=>t.lv===level());
   const d = ROUNDS[S.r];
   $('#app').innerHTML = `
@@ -1770,6 +1813,13 @@ function screenLevelUp(){
     <h2>Lv.${level()} 달성</h2>
     ${ladder()}
     <p>소문이 났다. 이번엔 <b>${esc(d.tier)}</b>에서 연락이 왔다.</p>
+    ${bill.items.length ? `<div class="memo bill"><span class="k">📬 이번 달 청구서</span>
+      ${bill.items.map(([n,v])=>`<span class="bi"><span>${esc(n)}</span><b>${won(v)}</b></span>`).join('')}
+      <span class="bi tot"><span>합계</span><b>${won(bill.total)}</b></span>
+      <span>내 돈 ${won(bill.before)} → <b>${won(S.money)}</b></span>
+      ${bill.sold ? `<span class="warnline">돈이 모자라 부계정 「${esc(bill.sold.nick)}」${josa(bill.sold.nick,'을','를').slice(bill.sold.nick.length)} 업자에게 팔아 메꿨다. (남은 계정 ${S.accs.length}개)</span>` : bill.before < bill.total ? `<span class="warnline">돈이 모자랐다. 팔 계정도 없어서 카드 돌려막기를 시작했다.</span>` : ''}
+    </div>` : ''}
+    ${S.r === BAL.badgeUntil + 1 ? `<p class="dim">// 이제부터는 "추천" 표시가 없어요. 대응 타일의 상성 칩(🧠 강함 등)을 보고 직접 고르세요.</p>` : ''}
     ${nu.length ? `<p class="dim">새로 쓸 수 있는 도구</p><div class="unlock">${nu.map(t=>`<div><b>${t.icon} ${t.name}</b><span>${esc(t.desc)}</span><span class="cash">${won(t.cost)}</span></div>`).join('')}</div>` : ''}
     <div class="row"><button class="btn" id="go">의뢰 확인</button></div>
   </div></div>`;
@@ -1796,6 +1846,7 @@ function screenEnding(kind){
                   : `당신이 선을 넘은 횟수: ${S.karma}번. 기억나는 건 그중 하나도 없었다.`,
     `처음 부탁했던 ${friendLabel()}는 언제부턴가 갤에 들어오지 않는다.`,
     '당신과 싸우던 사람들, 당신 편을 들던 사람들, 그 글을 퍼 나르던 사람들.',
+    ...(st.echo ? [`당신이 쓴 문장을 토씨 하나 안 바꾸고 옮겨 적은 사람만 ${st.echo}명이었다.`] : []),
     '처음 글을 쓴 사람은 언제나 한 명이었다. 나머지는 전부, 그 글을 믿었다.',
   ];
   const finalLine = kind === 'clear' ? '여론은 바뀌었다.<br>쓴 사람은 단 한 명이었다.' : '살아남는 키보드는 하나뿐이다.<br>이번엔 당신이 아니었다.';
@@ -1813,6 +1864,8 @@ function screenEnding(kind){
       <span class="dim">쓴 도구 / 쓴 작전비</span><span class="num">${st.tools} / ${won(st.spent)}</span>
       <span class="dim">만든 계정 / 정지</span><span class="num">${st.alts} / ${st.bans}</span>
       <span class="dim">선을 넘은 횟수</span><span class="num">${S.karma}</span>
+      <span class="dim">내 문장을 퍼 나른 사람</span><span class="num">${st.echo}명</span>
+      <span class="dim">낸 생활비 / 팔아넘긴 계정</span><span class="num">${won(st.bills)} / ${st.sold}</span>
       <span class="dim">성공한 의뢰</span><span class="num">${st.wins} / ${ROUNDS.length}</span>
     </div>
     <div class="line" style="animation-delay:${lines.length*D+1.8}s">${surveyHtml()}</div>
@@ -1825,7 +1878,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.9.7';
+const VERSION = '0.10';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},
