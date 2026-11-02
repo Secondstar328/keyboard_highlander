@@ -100,13 +100,11 @@
 
 - **Cloudflare Pages**가 `site/` 폴더만 공개해요 (빌드 명령 없음, 출력 폴더 `site`).
 - `main` 브랜치에 올리면 1~2분 안에 https://keyboard-highlander.pages.dev 에 자동 반영돼요.
-- 저장소 맨 위 `index.html`은 옛 GitHub Pages 주소로 들어온 사람을 `site/`로 넘겨주는 이동용 파일이에요.
 
 ## 파일 구조
 
 ```
 site/index.html         게임 전체 (HTML·CSS·JS 한 파일)
-index.html              옛 GitHub Pages 주소를 site/로 넘겨주는 이동용 파일
 docs/screenshots/       README용 스크린샷
 CHANGELOG.md            버전별 변경 기록
 ```

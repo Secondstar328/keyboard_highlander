@@ -4,7 +4,7 @@
 
 ## 배포
 - Cloudflare Pages가 `site/` 폴더만 공개한다 (빌드 명령 없음, 출력 폴더 `site`). main에 올리면 자동 반영.
-- 저장소 맨 위 `index.html`은 옛 GitHub Pages 주소를 `site/`로 넘겨주는 이동용 파일이다. 게임 코드를 여기에 넣지 않는다.
+- GitHub Pages는 꺼져 있다 (2026-11-02). 게임 주소는 Cloudflare Pages 하나뿐.
 - 개발 문서(CLAUDE.md, CHANGELOG.md, docs/)는 `site/` 밖에 둬서 공개되지 않게 한다.
 
 ## 구조 (site/index.html 안)
