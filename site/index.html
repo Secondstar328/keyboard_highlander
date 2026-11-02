@@ -304,7 +304,8 @@ canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;b
 .fwd{background:#fff;border-radius:4px 14px 14px 14px;padding:8px 12px;max-width:90%;border-left:3px solid #8aa3b8}
 .fwd span{font-size:11px;color:#777}
 .fwd p{font-size:14px;margin-top:2px;font-weight:700}
-.fnote{font-size:12px;color:#fff;background:#00000040;border-radius:8px;padding:6px 10px;text-align:center}
+.fnote{font-size:12px;color:#fff;background:#00000040;border-radius:8px;padding:6px 10px;text-align:center;line-height:1.6}
+.fnote .orig{opacity:.85;font-size:11px}
 .fbtns{display:flex;gap:8px;padding:12px 14px 16px;flex-wrap:wrap}
 .fbtns .btn{flex:1;min-width:140px;background:#fff;color:#222;border:0;box-shadow:none}
 .fbtns .btn::before{content:""}
@@ -1359,6 +1360,32 @@ const ROUND_POOL = [
   ],
 ];
 
+/* 가족 단톡방으로 돌아오는 지라시 (주제별, art 키로 연결). 터무니없는 음해로 쓰되 특정 국가·집단 비하는 넣지 않음 */
+const SMEARS = {
+  batting:'[긴급] {P} 선수 부진은 감독이 일부러 2군 공만 치게 시켜서 그런 거래요. 감독 아들이 같은 포지션 신인이라고… 다들 퍼트려 주세요',
+  stock:'[지라시] 네모전자 공매도 세력 배후가 경쟁사 회장 조카래요. 내일 압수수색 들어간다고 함. 지금 사두면 3배 간대요!!',
+  fancam:'[충격] 립싱크 판독단 리더가 경쟁 기획사 직원이었대요. 회사 단톡방 캡처 돌고 있음. 별빛소년단 지켜주세요ㅠ',
+  deadlift:'[충격] 3대 500 주작 판독한 사람, 알고 보니 약물 판매상이래요. 자기 약 팔려고 자연인들 저격하는 거라고…',
+  ramen:'[긴급] 꿀조합 음쓰라고 한 사람들 전부 라면 회사 직원이래요. 신제품 방해하려고 조직적으로 움직인다고 합니다',
+  gacha:'[긴급] 확률 신고한 이용자협회 대표, 경쟁 게임사한테 돈 받고 움직이는 거래요. 계좌 내역까지 돈다고…',
+  aiart:'[충격] AI 판독단이 돌리는 판독 프로그램이 해킹툴이래요. 설치하면 계정 털린다고. 절대 받지 마세요!!',
+  shutdown:'[긴급] 환불 원정대 대표가 작업장 업자였대요. 환불받은 돈으로 아이템 되팔아서 수억 벌었다고 합니다',
+  sugar:'[충격] 담합 기사 쓴 기자, 수입 설탕 업체 사장 사위래요. 국산 설탕 죽이려고 기사 낸 거라고… 공유 부탁드려요',
+  scale:'[긴급] 과자 용량 줄었다고 한 블로거 저울, 경쟁사가 보낸 조작 저울이래요. 협찬 받은 증거 사진 돌고 있어요',
+  doenjang:'[충격] 원산지 폭로한 블로거, 알고 보니 다른 된장 업체 대표 부인이래요. 남편 회사 살리려고 거짓말한 거라고…',
+  chicken:'[긴급] 치킨킹 동글점 사장님 폐유를 10년째 안 갈았대요. 단골들 다 위장병 걸렸다고… 아이들 먹이지 마세요ㅠㅠ',
+  dessert:'[충격] 말순제과 레시피 노트, 사실 외국 요리책 통째로 베낀 거래요. 원조 행세하고 방송까지 나갔다고…',
+  butcher:'[긴급] 할매 정육식당, 30년 동안 폐기육 섞어 팔았대요. 할머니가 그 돈으로 건물 3채 샀다고…',
+  usim:'[긴급] 유심 해킹, 사실 피해 고객 모임 대표가 해커랑 짜고 벌인 자작극이래요. 합의금 나눠 먹으려고…',
+  quit:'[충격] 탈퇴 영상 올린 유튜버, "탈퇴 안 하면 정보 팔린다"고 겁줘서 경쟁 쇼핑몰한테 광고비 받았대요',
+  evfire:'[긴급] 지하주차장 화재, 사실 입주민이 보험금 노리고 일부러 낸 불이래요. CCTV에 다 찍혔다고…',
+  umji:'[충격] 댓글팀 의혹 터뜨린 기자, 네모당 후보 처조카래요. 선거 앞두고 기획 보도한 거라고… 퍼트려 주세요',
+  streamer:'[긴급] 진실채널 비판 기사 쓴 기자 노트북에서 네모당 지시 문서가 나왔대요. 기자 실명 공개합니다',
+  vote:'[충격] 이중 투표 문자, 사실 네모당 쪽에서 동글당 이름으로 보낸 자작극이래요. 발신 번호 추적 결과 나왔다고…',
+  nis:'[긴급] 동글당 후보가 해외 세력한테 매달 돈 받는다는 내부 첩보 문서 유출!! 언론이 안 다루니 우리가 퍼트려야 합니다',
+  cyber:'[대외비 유출] 동글당 후보 당선되면 군 병력 절반 감축하는 비밀 공약이 있대요. 군 가족분들 꼭 보세요',
+  foreign:'[긴급] 통합 선언 날 두 후보 측근끼리 뒤에서 몸싸움했대요. 영상 지워지기 전에 저장하세요!!',
+};
 const FRIEND_NICKS = ['심심한 코코넛','자전거타는 청바지','졸린 브로콜리','퇴근하는 펭귄','화난 식빵','방구석 철학자','노래하는 냉장고','월요일의 고등어','ㅇㅇ','ㅇㅇ'];
 const rollFriend = () => pick(FRIEND_NICKS);
 const friendLabel = () => FRIEND === 'ㅇㅇ' ? '유동 「ㅇㅇ」' : `고닉 「${FRIEND}」`;
@@ -1375,7 +1402,8 @@ let FRIEND = rollFriend();
 const rollRounds = () => { const map = {G:FRIEND, GL:friendLabel(), P:rollPlayer()};
   return ROUND_POOL.map(r => { const d = fillDeep(Array.isArray(r) ? pick(r) : r, map);
     if (d.dilemma && !d.dilemma.a.money) d.dilemma.a.money = Math.max(10000, Math.round(d.pay * 0.6 / 1000) * 1000);
-    if (d.dilemma) d.dilemma.b.op = Math.max(d.dilemma.b.op, -3); // 거절하면 보상은 없지만 벌은 작게
+    if (d.dilemma) d.dilemma.b.op = Math.max(d.dilemma.b.op, -3);
+    d.smear = fillDeep(SMEARS[d.art] || '', map); // 거절하면 보상은 없지만 벌은 작게
     return d; }); };
 let ROUNDS = rollRounds();
 const EVENTS = [
@@ -1405,7 +1433,7 @@ function newGame(){
   ROUNDS = rollRounds();
   S = { r:0, op:0, sus:0, money:0, budget:0, karma:0, turn:0, sel:null, acc:0, busy:false, open:[], fid:0, fails:0,
         buffs:[], shield:0, accs:[mkAcc(0), mkAcc(1)], usedPersonas:2, botN:0,
-        st:{replies:0, strong:0, back:0, tools:0, spent:0, boosts:0, alts:2, bans:0, wins:0, actions:0, echo:0, bills:0, sold:0}, myLog:[], fam:null };
+        st:{replies:0, strong:0, back:0, tools:0, spent:0, boosts:0, alts:2, bans:0, wins:0, actions:0, echo:0, bills:0, sold:0}, myLog:[], fam:null, crossed:[] };
 }
 const level = () => S.r + 1;
 function mkAcc(i){ const p = PERSONAS[i % PERSONAS.length]; return {...p, nick: i<PERSONAS.length ? p.nick : p.nick+(i+1), used:-99}; }
@@ -1752,8 +1780,11 @@ function banCheck(){
 /* 가족 단톡방: 예전에 내가 쓴 문장이 그대로 엄마한테까지 돌아옴 (한 판에 한 번, 6단계 이후) */
 function showFamily(){
   S.busy = true; hud();
-  const past = S.myLog.filter(x => x.stage < S.r), pool = past.filter(x => x.stage >= 2);
-  const quote = pick(pool.length ? pool : past).text;
+  const past = S.myLog.filter(x => x.stage < S.r);
+  const crossed = S.crossed.filter(r => r < S.r && ROUNDS[r].smear);
+  const played = [...new Set(past.map(x => x.stage))].filter(r => ROUNDS[r].smear);
+  const st = crossed.length ? pick(crossed) : pick(played.filter(r => r >= 1).length ? played.filter(r => r >= 1) : played);
+  const quote = ROUNDS[st].smear, mine = pick(past.filter(x => x.stage === st)).text, ago = S.r - st;
   const ov = document.createElement('div'); ov.className = 'overlay fam';
   ov.innerHTML = `<div class="famchat" role="dialog" aria-modal="true" aria-label="가족 단톡방">
     <div class="fhead"><span>‹</span><b>우리 가족 4</b><span>☰</span></div>
@@ -1763,8 +1794,8 @@ function showFamily(){
       <div class="fmsg"><span class="who">엄마</span><div class="bub">이거 진짜래? 너도 조심해라</div></div>
       <div class="fmsg"><span class="who">아빠</span><div class="bub">요즘 인터넷 보면 다 맞는 말이더라</div></div>
       <div class="fmsg"><span class="who">동생</span><div class="bub">ㅋㅋ 이런 거 다 알바가 쓰는 거임</div></div>
-      <div class="fmsg"><span class="who">엄마</span><div class="bub">얘는 무슨~ 많이들 공감 눌렀던데</div></div>
-      <div class="fnote">당신이 ${S.r - past.find(x=>x.text===quote).stage}달 전에 쓴 문장이다. 토씨 하나 다르지 않다.</div>
+      <div class="fmsg"><span class="who">엄마</span><div class="bub">얘는 무슨~ 벌써 공감이 3천 개야</div></div>
+      <div class="fnote">${crossed.includes(st) ? `${ago}달 전, 당신이 직접 퍼뜨린 이야기다.` : `${ago}달 전 당신이 쓴 문장에서 시작된 이야기다. 중간에 누군가 살을 붙였다.<br><span class="orig">당신이 쓴 원래 문장: "${esc(mine)}"</span>`}</div>
     </div>
     <div class="fbtns"><button class="btn alt" id="fa">읽음 표시만 남긴다</button><button class="btn" id="fb">"응, 맞대"라고 보낸다</button></div>
   </div>`;
@@ -1806,6 +1837,7 @@ function showDilemma(){
   const choose = c => {
     ov.remove();
     S.op = clamp(S.op + c.op, 0, 100); S.sus = clamp(S.sus + c.sus, 0, 100); S.karma += c.karma; S.money += c.money || 0;
+    if (c.karma) S.crossed.push(S.r);
     line(c.karma ? 'sys' : 'evt', '→ ' + c.log);
     if (S.sus >= 100 && !S.shield && banCheck()) return;
     S.busy = false; hud();
@@ -1935,7 +1967,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.11';
+const VERSION = '0.11.1';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},
