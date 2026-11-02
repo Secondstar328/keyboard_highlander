@@ -50,6 +50,10 @@
 
 ![1단계 갤러리 화면](docs/screenshots/gallery.png)
 
+1단계 게시글 첨부 이미지는 코드로 그린 도트 그림이에요.
+
+![갤러리 첨부 이미지 5종](docs/screenshots/gallery-art.png)
+
 ## 플랫폼 전용 행동
 
 게시판마다 하나씩 있고, 무료지만 한 번 쓰면 3턴을 기다려야 해요.

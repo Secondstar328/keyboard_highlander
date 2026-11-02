@@ -190,7 +190,9 @@ canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;b
 .g-info .w{color:#333;font-weight:700}
 .g-info .r{margin-left:auto}
 .g-body{padding:14px 0 6px;font-size:14px;line-height:1.75;color:#222}
-.g-img{display:inline-flex;align-items:center;gap:6px;margin:8px 0;padding:22px 26px;background:#f3f3f3;border:1px solid #e1e1e1;color:#888;font-size:12px}
+.g-art{display:flex;flex-direction:column;gap:4px;margin:10px 0 0;align-items:flex-start}
+.g-art canvas{width:256px;max-width:100%;height:auto;image-rendering:pixelated;border:1px solid #e1e1e1}
+.g-art span{font-size:11px;color:#999}
 .g-vote{display:flex;justify-content:center;gap:10px;padding:10px 0 4px}
 .g-vote div{display:flex;flex-direction:column;align-items:center;min-width:76px;padding:6px 10px;border:1px solid #ccc;border-radius:3px}
 .g-vote b{font-size:20px;line-height:1.2}
@@ -418,6 +420,67 @@ PIX.jar = {rows:["..kkkkkkkk..",".kbbbbbbbbk.","..kkkkkkkk..",".kooooooook.","ko
 PIX.car = {rows:["......f..f......",".....frffrf.....","....kkkkkkkk....","...kwwwkkwwwk...","..kbbbbbbbbbbk..",".kbbbbbbbbbbbbk.",".kbyybbbbbbbyyk.",".kkkkkkkkkkkkkk.","..kgk......kgk.."],
   pal:{k:'#111',w:'#9ad1ff',b:'#e8e8e8',y:'#ffd84a',g:'#444',f:'#ff9f1c',r:'#ff3b3b'}};
 const josa = (w, a, b) => { const c = w.charCodeAt(w.length-1); return w + (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? a : b); };
+/* ---------- 갤러리 첨부 이미지: 64×40 도트 격자에 코드로 직접 그림 (칸 하나 = 4px) ---------- */
+const ART_W = 64, ART_H = 40, ART_S = 4;
+function artKit(g){
+  const r = (x,y,w,h,c) => { g.fillStyle = c; g.fillRect(x*ART_S, y*ART_S, w*ART_S, h*ART_S); };
+  const t = (s,x,y,c,size=8) => { g.fillStyle = c; g.font = `${size}px "Press Start 2P", monospace`; g.textBaseline = 'top'; g.fillText(s, x*ART_S, y*ART_S); };
+  const ln = (pts,c) => { for (let i=0;i<pts.length-1;i++){ let [x0,y0] = pts[i]; const [x1,y1] = pts[i+1];
+      const dx = Math.abs(x1-x0), dy = -Math.abs(y1-y0), sx = x0<x1?1:-1, sy = y0<y1?1:-1; let e = dx+dy;
+      for(;;){ r(x0,y0,1,1,c); if (x0===x1 && y0===y1) break; const e2 = 2*e; if (e2>=dy){ e+=dy; x0+=sx; } if (e2<=dx){ e+=dx; y0+=sy; } } } };
+  const grid = c => { for (let x=6;x<ART_W;x+=8) r(x,0,1,ART_H,c); for (let y=4;y<ART_H;y+=8) r(0,y,ART_W,1,c); };
+  return {r,t,ln,grid};
+}
+const ART = {
+  // 야구: 타율이 뚝 떨어지는 그래프
+  batting(g){ const {r,t,ln,grid} = artKit(g);
+    r(0,0,64,40,'#ffffff'); grid('#f0f0f0'); r(6,4,1,31,'#999'); r(6,34,56,1,'#999');
+    const pts = [[8,7],[15,8],[22,6],[29,12],[36,15],[43,21],[50,27],[57,31]];
+    ln(pts,'#d31900'); pts.forEach(([x,y])=>r(x-1,y-1,2,2,'#d31900'));
+    t('AVG',1,0,'#333'); t('.350',8,8,'#999',6); t('.182',50,34,'#d31900',6);
+    t('2023',7,36,'#999',6); t('2026',53,36,'#999',6);
+  },
+  // 주식: 파란 캔들이 줄줄이 내려감
+  stock(g){ const {r,t,grid} = artKit(g);
+    r(0,0,64,40,'#ffffff'); grid('#f0f0f0'); r(4,36,58,1,'#bbb');
+    const c = [[10,13],[12,15],[14,13],[13,17],[17,20],[19,18],[18,22],[22,25],[24,23],[23,27],[27,30],[30,33]];
+    c.forEach(([o,cl],i)=>{ const x = 6+i*4.5|0, up = cl<o, col = up ? '#d31900' : '#1f5bd9', top = Math.min(o,cl), h = Math.max(1,Math.abs(cl-o));
+      r(x+1, top-2, 1, h+4, col); r(x, top, 3, h, col); });
+    t('NEMO',1,1,'#333'); t('-23.4%',38,1,'#1f5bd9');
+  },
+  // 아이돌: 어두운 무대 직캠
+  fancam(g){ const {r,t} = artKit(g);
+    r(0,0,64,40,'#140b2e');
+    for (let y=0;y<30;y++){ const w = 2+y/3|0; [14,32,50].forEach(cx=>r(cx-w,y,w*2,1,'#2a1d5c')); }
+    r(0,31,64,9,'#2b2142'); r(0,31,64,1,'#5a4a8a');
+    const skin='#f2c39b', cols=['#ff5d8f','#62e3ff','#ffd84a','#b07cff','#7dff9b'];
+    cols.forEach((c,i)=>{ const x = 9+i*11, y = 18 + (i%2);
+      r(x,y-4,3,3,'#2b1a0e'); r(x,y-3,3,2,skin); r(x-1,y,5,6,c); r(x-2,y+1,1,3,skin); r(x+4,y-1,1,3,skin); r(x,y+6,1,6,'#222'); r(x+2,y+6,1,6,'#222'); });
+    r(1,1,2,2,'#ff3b3b'); t('REC',4,1,'#ffffff',6); t('02:14',47,1,'#ffffff',6);
+    r(0,0,64,1,'#000'); r(0,39,64,1,'#000');
+  },
+  // 헬스: 데드리프트 + 원판 판독 동그라미
+  deadlift(g){ const {r,t} = artKit(g);
+    r(0,0,64,40,'#d9d4cc'); r(0,30,64,10,'#6b4f3a'); r(0,30,64,1,'#4a3526');
+    for (let x=0;x<64;x+=16) r(x,4,8,6,'#c8c2b8');
+    r(8,24,48,1,'#9a9a9a');
+    [[10,'#111'],[13,'#c0392b'],[47,'#c0392b'],[50,'#111']].forEach(([x,c])=>r(x,18,3,13,c));
+    const skin='#f2c39b'; r(30,9,4,4,skin); r(30,8,4,1,'#2b1a0e'); r(29,13,6,6,'#3a6ea5'); r(28,14,1,10,skin); r(35,14,1,10,skin);
+    r(29,19,6,3,'#222'); r(29,22,2,8,'#222'); r(33,22,2,8,'#222');
+    for (let a=0;a<28;a++){ const ang = a/28*Math.PI*2; r(14+Math.round(Math.cos(ang)*7), 24+Math.round(Math.sin(ang)*7), 1, 1, '#ff2a2a'); }
+    t('45?',4,8,'#ff2a2a');
+  },
+  // 편의점: 치즈 녹은 컵라면 + 바나나우유
+  ramen(g){ const {r,t} = artKit(g);
+    r(0,0,64,40,'#fff7e6'); r(0,32,64,8,'#e7d3b0');
+    for (let y=0;y<16;y++){ const w = 11 - (y/4|0); r(29-w, 17+y, w*2, 1, y%5===0 ? '#ffffff' : '#c0392b'); }
+    r(17,14,24,3,'#e8481c'); r(19,13,20,1,'#ff7b3a');
+    r(22,14,6,2,'#ffd23f'); r(23,16,2,4,'#ffd23f'); r(31,14,5,2,'#ffd23f'); r(33,16,1,6,'#ffd23f');
+    [[20,4],[27,2],[34,5]].forEach(([x,y])=>{ r(x,y,1,3,'#bbb'); r(x+1,y+3,1,3,'#bbb'); r(x,y+6,1,2,'#bbb'); });
+    r(46,20,10,13,'#ffe066'); r(48,16,6,4,'#ffe066'); r(49,14,4,2,'#ffffff'); r(46,25,10,3,'#4aa3df');
+    t('???',3,2,'#333');
+  },
+};
 const pad = n => String(n).padStart(2,'0');
 
 /* ---------- 플랫폼 스킨 (전부 가상의 서비스) ---------- */
@@ -427,7 +490,7 @@ const SKINS = {
       <div class="g-tabs"><span class="on">전체글</span><span>개념글</span><span>공지</span></div>
       <div class="g-post"><div class="g-title"><span class="mh">[일반]</span>${esc(d.title)}</div>
         <div class="g-info"><span class="w">ㅇㅇ<span class="ip">(211.234)</span></span><span>2026.11.02 ${pad(R(0,23))}:${pad(R(0,59))}:${pad(R(0,59))}</span><span class="r">조회 ${R(800,9000).toLocaleString()}</span></div>
-        <div class="g-body">${d.body.map(esc).join('<br>')}<br><span class="g-img">${esc(d.img)}</span></div>
+        <div class="g-body">${d.body.map(esc).join('<br>')}<div class="g-art"><canvas id="gimg" width="256" height="160" aria-label="첨부 이미지 ${esc(d.img)}"></canvas><span>${esc(d.img)}</span></div></div>
         <div class="g-vote" id="bstat"></div></div>`,
     stat:()=>`<div class="up"><b>${Math.round(S.op*1.3)}</b><span>개념 추천</span></div><div class="down"><b>${Math.round((100-S.op)*1.1)}</b><span>비추천</span></div>`,
     meta:()=>`11.02 ${pad(R(0,23))}:${pad(R(0,59))}:${pad(R(0,59))}`,
@@ -636,7 +699,7 @@ const ROUND_POOL = [
   // ===== 1단계: 친구 고닉 (갤러리) — 새 게임마다 5개 중 하나 =====
   [
     { tier:'친구 고닉', skin:'gall', gall:'국내야구 갤러리', client:'오래 알던 {GL}', ask:'"형, 내 최애 {P} 끝물이라고 갤이 난리남ㅠ 아직 한 방 있다고. 치맥 쏠게"',
-      title:'{P} 이제 진짜 끝물 아님? 타율 1할대 실화냐', body:['3년 전 홈런왕 맞음?','요즘 직구 하나도 못 따라감','네모 펭귄스 프런트는 은퇴식이나 준비해라'], img:'⚾ {P}_타율그래프.png',
+      title:'{P} 이제 진짜 끝물 아님? 타율 1할대 실화냐', body:['3년 전 홈런왕 맞음?','요즘 직구 하나도 못 따라감','네모 펭귄스 프런트는 은퇴식이나 준비해라'], img:'{P}_타율그래프.png', art:'batting',
       S:'{P} 옹호', F:'은퇴론자', X:'{P}', Y:'은퇴론',
       start:36, target:58, turns:12, pay:25000, payNote:'치맥 한 번', budget:0, spawn:.3, types:{logic:3,anger:2,sus:1,crowd:2},
       extraNicks:['직관러','펭귄스20년','외야석지박령'],
@@ -653,7 +716,7 @@ const ROUND_POOL = [
         a:{l:'배신자로 박제한다', op:14, sus:12, karma:1, log:'「직관러」는 "배신자"로 박제됐다. 그는 그냥 오래 응원하다 지친 팬이었다.'},
         b:{l:'그건 좀…', op:0, sus:0, karma:0, log:'당신은 사진을 닫았다.'}} },
     { tier:'친구 고닉', skin:'gall', gall:'주식 갤러리', client:'오래 알던 {GL}', ask:'"형, 나 네모전자 풀매수했는데 갤에 \'끝났다\' 글 도배됨ㅠ 좀만 막아줘. 오르면 국밥 쏨"',
-      title:'네모전자 3일 연속 파란불 실화냐? 이거 끝났다 ㅋㅋ', body:['물린 애들 아직도 존버함?','차트 보니까 바닥 뚫림 ㅇㅇ','손절 ㄱㄱ 늦으면 진짜 끝임'], img:'📉 chart_20261102.png',
+      title:'네모전자 3일 연속 파란불 실화냐? 이거 끝났다 ㅋㅋ', body:['물린 애들 아직도 존버함?','차트 보니까 바닥 뚫림 ㅇㅇ','손절 ㄱㄱ 늦으면 진짜 끝임'], img:'chart_20261102.png', art:'stock',
       S:'존버파', F:'손절파', X:'네모전자', Y:'손절',
       start:36, target:58, turns:12, pay:10000, payNote:'국밥 한 그릇', budget:0, spawn:.3, types:{logic:2,anger:3,sus:1,crowd:2},
       extraNicks:['차트도사','상한가요정','개미1호'],
@@ -670,7 +733,7 @@ const ROUND_POOL = [
         a:{l:'찌라시 만든다', op:14, sus:14, karma:1, log:'다음 날 주가가 8% 올랐다. 그 글을 믿고 들어온 사람들은 일주일 뒤 물렸다.'},
         b:{l:'그건 좀…', op:0, sus:0, karma:0, log:'당신은 메모장을 닫았다.'}} },
     { tier:'친구 고닉', skin:'gall', gall:'별빛소년단 마이너 갤러리', client:'오래 알던 {GL}', ask:'"형, 나 별빛소년단 갤 고인물인데 컴백 무대 립싱크 논란 터짐ㅠ 좀만 도와줘. 앨범 한 장 줄게"',
-      title:'별빛소년단 어제 음방 이거 립싱크 아님? (직캠 있음)', body:['직캠으로 들어보면 숨소리가 하나도 안 들림','안무 제일 빡센 구간인데 음정이 그대로임','이게 라이브면 나도 아이돌함ㅋㅋ'], img:'🎤 fancam_1102.mp4',
+      title:'별빛소년단 어제 음방 이거 립싱크 아님? (직캠 있음)', body:['직캠으로 들어보면 숨소리가 하나도 안 들림','안무 제일 빡센 구간인데 음정이 그대로임','이게 라이브면 나도 아이돌함ㅋㅋ'], img:'fancam_1102.mp4', art:'fancam',
       S:'팬덤', F:'립싱크 판독단', X:'별빛소년단', Y:'립싱크설',
       start:36, target:58, turns:12, pay:15000, payNote:'앨범 한 장', budget:0, spawn:.3, types:{logic:2,anger:2,sus:2,crowd:2},
       extraNicks:['귀호강','직캠장인','음방지박령'],
@@ -687,7 +750,7 @@ const ROUND_POOL = [
         a:{l:'타팬으로 몬다', op:14, sus:12, karma:1, log:'「귀호강」은 갤에서 "타팬"으로 박제됐다. 그는 그 그룹을 좋아한 적이 없었다.'},
         b:{l:'그건 좀…', op:0, sus:0, karma:0, log:'당신은 캡처 파일을 지웠다.'}} },
     { tier:'친구 고닉', skin:'gall', gall:'헬스 갤러리', client:'오래 알던 {GL}', ask:'"형, 나 3대 500 인증 올렸는데 주작이라고 털리는 중ㅠ 진짜 들었다고. 닭가슴살 한 박스 줄게"',
-      title:'어제 올라온 3대 500 인증 영상 주작 판독 들어간다 (프레임 분석)', body:['원판 각인 확대해봄','20kg 원판에 45kg 스티커 붙인 거 아님?','반박 ㄱ'], img:'🏋️ deadlift_500.mp4',
+      title:'어제 올라온 3대 500 인증 영상 주작 판독 들어간다 (프레임 분석)', body:['원판 각인 확대해봄','20kg 원판에 45kg 스티커 붙인 거 아님?','반박 ㄱ'], img:'deadlift_500.mp4', art:'deadlift',
       S:'인증 옹호', F:'주작 판독단', X:'3대 500 인증', Y:'주작설',
       start:36, target:58, turns:12, pay:20000, payNote:'닭가슴살 한 박스', budget:0, spawn:.3, types:{logic:3,anger:2,sus:1,crowd:2},
       extraNicks:['프레임장인','쇠질10년','단백질셰이크'],
@@ -704,7 +767,7 @@ const ROUND_POOL = [
         a:{l:'합성짤 만든다', op:14, sus:12, karma:1, log:'합성짤이 념글에 올라갔다. 「프레임장인」은 그날 밤 탈퇴했다.'},
         b:{l:'그건 좀…', op:0, sus:0, karma:0, log:'당신은 포토샵을 껐다.'}} },
     { tier:'친구 고닉', skin:'gall', gall:'편의점 마이너 갤러리', client:'오래 알던 {GL}', ask:'"형, 나 꿀조합 레시피 올렸는데 음쓰라고 털리는 중ㅠ 진짜 맛있다고. 삼각김밥 쏠게"',
-      title:'념글 꿀조합 (불맛라면+바나나우유+치즈) 해봤는데 이거 음쓰 아님?', body:['레시피대로 해봄','바나나우유 붓는 순간 색깔이 이상해짐','한 입 먹고 버림 ㅋㅋ'], img:'🍜 recipe_try.jpg',
+      title:'념글 꿀조합 (불맛라면+바나나우유+치즈) 해봤는데 이거 음쓰 아님?', body:['레시피대로 해봄','바나나우유 붓는 순간 색깔이 이상해짐','한 입 먹고 버림 ㅋㅋ'], img:'recipe_try.jpg', art:'ramen',
       S:'꿀조합파', F:'음쓰파', X:'꿀조합', Y:'음쓰론',
       start:36, target:58, turns:12, pay:3000, payNote:'삼각김밥 2개', budget:0, spawn:.3, types:{logic:2,anger:2,sus:1,crowd:3},
       extraNicks:['미식가','편의점야간알바','라면박사'],
@@ -1157,7 +1220,7 @@ const ladder = () => `<div class="ladder">${ROUNDS.map((d,i)=>`<div class="${i<S
 function screenTitle(){
   FRIEND = rollFriend();
   $('#app').innerHTML = `
-  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.9</span></div>
+  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.9.1</span></div>
   <div class="body stack">
     <h1>키보드<br>하이랜더</h1>
     <canvas class="sprite" id="hero" aria-label="모니터 앞에 앉은 알바생 도트 그림"></canvas>
@@ -1253,6 +1316,7 @@ function startRound(){
   document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => reply(b.dataset.t));
   document.querySelectorAll('[data-g]').forEach(b => b.onclick = () => useTool(b.dataset.g));
   $('#skinact').onclick = useSkinAct;
+  const gi = $('#gimg'); if (gi && ART[d.art]){ const draw = () => ART[d.art](gi.getContext('2d')); draw(); document.fonts?.ready.then(draw); }
   const thk = d.thumb || SK().thumb, th = $('#thumb'); if (th && thk) drawPix(th, PIX[thk].rows, PIX[thk].pal);
   spawnFoe(); spawnFoe(); spawnFoe();
   autoAcc(); hud();
