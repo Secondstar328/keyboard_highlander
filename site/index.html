@@ -56,6 +56,9 @@ b{color:var(--head)}
 .str{color:var(--str)}
 code,.code{font-family:var(--f-body);background:#ffffff0d;padding:0 4px;border-radius:3px}
 button{font:inherit;color:inherit;cursor:pointer}
+.btn.settle{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:var(--acc);color:var(--bg);border-color:var(--acc);text-align:left}
+.btn.settle[hidden]{display:none}
+.btn.settle small{font-weight:400;font-size:12px;opacity:.85}
 .btn{background:transparent;color:var(--acc);border:1px solid var(--acc);border-radius:4px;font-weight:700;padding:8px 14px;font-size:14px}
 .btn::before{content:"▶ "}
 .btn:hover{background:var(--acc);color:var(--bg)}
@@ -289,8 +292,8 @@ canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;b
 .board .tag.echo{background:#2e9e5b;color:#fff}
 .memo.bill{border-left-color:var(--str);background:#e6b67312}
 .memo.bill .k{color:var(--str)}
-.memo.bill .bi{display:flex;justify-content:space-between;gap:12px;font-size:14px}
-.memo.bill .bi.tot{border-top:1px dashed var(--line);padding-top:4px}
+.memo .bi{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.memo .bi.tot{border-top:1px dashed var(--line);padding-top:4px}
 .memo .warnline{color:var(--warn);font-size:13px}
 
 /* 선택지 통장 줄 */
@@ -717,7 +720,7 @@ const SKINS = {
     meta:()=>`11.02 ${pad(R(0,23))}:${pad(R(0,59))}:${pad(R(0,59))}`,
     foeNick:()=> Math.random()<.7 ? `ㅇㅇ(${R(1,223)}.${R(1,255)})` : null,
     nick:n=>{ const m = n.match(/^(.*?)(\(\d+\.\d+\))$/); return m ? `${esc(m[1])}<span class="ip">${m[2]}</span>` : `${esc(n)}<span class="gonik" title="고정닉">◆</span>`; },
-    newbie:'뉴비인데 이 글 보니까 {S} 말이 맞는 듯 ㅇㅇ',
+    newbie:'뉴비인데 댓글 보니까 생각 바뀜 ㅇㅇ',
     my:{ divert:['근데 갤 왜 이럼?','저녁 뭐 먹음 다들','념글 보고 옴 ㅋㅋ','알바 타령하는 놈이 알바임 ㅇㅇ','다들 진정하고 짤이나 보셈','갤 오늘따라 왜 이렇게 뜨거움'] },
     foe:{ sus:['유동 IP 왜 다 비슷함?','이거 다 한 놈 같은데','추천 수 주작 아님?','IP 뒷자리 똑같은 거 실화냐','방금 그 고닉 부계 아님?'] }},
   forum:{name:'겜톡', place:'게임 커뮤니티', url:'gemtalk.forum/free', cnt:'댓글',
@@ -772,8 +775,8 @@ const TACTICS = {
   divert: {icon:'🌀', name:'물타기',       op:4, sus:0, vs:{logic:1,anger:1,sus:2,crowd:1}},
   empathy:{icon:'🥺', name:'공감하는 척',  op:6, sus:2, vs:{logic:0,anger:1,sus:1,crowd:2}},
 };
-const typeList = t => Object.keys(FT).filter(k => TACTICS[t].vs[k]===2).map(k=>FT[k].icon).join('');
-const weakList = t => Object.keys(FT).filter(k => TACTICS[t].vs[k]===0).map(k=>FT[k].icon).join('');
+const typeList = t => Object.keys(FT).filter(k => TACTICS[t].vs[k]===2).map(k=>FT[k].icon+FT[k].name).join(', ');
+const weakList = t => Object.keys(FT).filter(k => TACTICS[t].vs[k]===0).map(k=>FT[k].icon+FT[k].name).join(', ');
 
 /* ---------- 도구: 레벨로 해금, 돈 드는 건 의뢰인 작전비에서 차감 ---------- */
 const TOOLS = [
@@ -784,19 +787,19 @@ const TOOLS = [
   {id:'meme',   icon:'🖼️', name:'짤 외주',            lv:2, cost:10000,    desc:'짤 장인에게 의뢰 · 여론 ▲ · 🔥/👥 하나 웃겨서 제압'},
   {id:'macro',  icon:'🤖', name:'매크로 돌리기',      lv:2, cost:30000,    desc:'추천 폭격 · 여론 ▲▲ · 상대 댓글 하나 묻기 · 의심 ▲▲▲▲'},
   {id:'youtube',icon:'📹', name:'유튜버 바이럴 영상', lv:3, cost:100000,   desc:'3턴 동안 여론이 계속 오름'},
-  {id:'vtuber', icon:'🎙️', name:'버튜버 광고',        lv:3, cost:200000,   desc:'팬덤 투입 · 👥동조형을 전부 우리 편으로'},
+  {id:'vtuber', icon:'🎙️', name:'버튜버 광고',        lv:3, cost:200000,   desc:'팬덤 투입 · 👥동조형을 전부 우리 편으로 · 의뢰당 1회', once:true},
   {id:'admin',  icon:'🔑', name:'커뮤 운영자 매수',   lv:4, cost:500000,   desc:'의심 0 · 3턴 동안 정지 면제'},
-  {id:'press',  icon:'🗞️', name:'언론사 매수',        lv:5, cost:1000000,  desc:'"단독" 기사 · 🧠팩트형 전부 제압 · 의심 ▼'},
+  {id:'press',  icon:'🗞️', name:'언론사 매수',        lv:5, cost:1000000,  desc:'"단독" 기사 · 🧠팩트형 전부 제압 · 의심 ▼ · 의뢰당 1회', once:true},
   {id:'bots',   icon:'🛰️', name:'해외 봇 농장',       lv:5, cost:2000000,  desc:'번역체 계정 +3 · 의심 ▲▲'},
-  {id:'poll',   icon:'📊', name:'여론조사 업체 의뢰', lv:6, cost:3000000,  desc:'"조사 결과" 발표 · 여론 ▲▲▲▲'},
-  {id:'portal', icon:'🔍', name:'포털 검색어 조작',   lv:7, cost:8000000,  desc:'상대 댓글 전부 묻힘 · 의심 ▲▲'},
+  {id:'poll',   icon:'📊', name:'여론조사 업체 의뢰', lv:6, cost:3000000,  desc:'"조사 결과" 발표 · 여론 ▲▲▲▲ · 의뢰당 1회', once:true},
+  {id:'portal', icon:'🔍', name:'포털 검색어 조작',   lv:7, cost:8000000,  desc:'상대 댓글 전부 묻힘 · 의심 ▲▲ · 의뢰당 1회', once:true},
 ];
 
 const TOOL_FX = {
   post:[['여론▲',1],['의심▲',0]], boost:[['여론▲×계정',1],['의심▲▲▲',0]], alt:[['계정+1',1],['턴 안 씀',1],['의심▲',0]], lurk:[['의심▼▼',1],['1턴 쉼',2]],
-  meme:[['여론▲',1],['🔥/👥 1개 제압',1],['의심 조금',0]], macro:[['여론▲▲',1],['상대 1개 묻기',1],['의심▲▲▲▲',0]], youtube:[['여론▲ ×3턴',1]], vtuber:[['👥 일괄 제압',1],['여론▲',1]],
-  admin:[['의심 0',1],['정지 면제 3턴',1]], press:[['🧠 일괄 제압',1],['의심▼',1]], bots:[['계정+3',1],['의심▲▲',0]],
-  poll:[['여론▲▲▲▲',1],['의심▲',0]], portal:[['상대 전부 묻기',1],['의심▲▲',0]],
+  meme:[['여론▲',1],['🔥/👥 1개 제압',1],['의심 조금',0]], macro:[['여론▲▲',1],['상대 1개 묻기',1],['의심▲▲▲▲',0]], youtube:[['여론▲ ×3턴',1]], vtuber:[['👥 일괄 제압',1],['여론▲',1],['의뢰당 1회',2]],
+  admin:[['의심 0',1],['정지 면제 3턴',1]], press:[['🧠 일괄 제압',1],['의심▼',1],['의뢰당 1회',2]], bots:[['계정+3',1],['의심▲▲',0]],
+  poll:[['여론▲▲▲▲',1],['의심▲',0],['의뢰당 1회',2]], portal:[['상대 전부 묻기',1],['의심▲▲',0],['의뢰당 1회',2]],
 };
 /* ---------- 플랫폼 전용 행동 (무료, 쓰고 나면 3턴 쿨타임) ---------- */
 const SKIN_CD = 3;
@@ -855,7 +858,7 @@ const REPLY = {
             empathy:['…그렇게 말하니까 좀 누그러지긴 하네. 그래도 빡침','착한 척 오지네. 근데 반은 맞는 말임','알았어. 근데 아직 열받는 건 맞음'] },
     sus:  { source:['자료는 그럴듯한데 니 계정 가입일 어제던데? ㅋㅋ','출처 칼같이 가져오는 거 보니 더 수상함. 일반인은 이렇게 안 함','링크는 봤고 니 활동 기록도 봤다 ㅋㅋ'],
             mock:['긁히는 거 보니 찔리나 보네 ㅋㅋㅋ','캡처 완료. 알바 맞네 시급 얼마냐','반응 속도 보소 ㅋㅋ 대기 타고 있었냐','니 말투 위에 댓글이랑 똑같음 ㅋㅋ 같은 놈이네'],
-            divert:['알바면 저렇게 아무 말이나 안 하지 ㅋㅋ 내가 과했다','저녁 메뉴 묻는 알바는 없겠지… ㅇㅋ 넘어감','ㅋㅋ 너무 해맑아서 의심한 내가 민망함','아 됐다 알바 찾기도 지친다'],
+            divert:['알바면 저렇게 아무 말이나 안 하지 ㅋㅋ 내가 과했다','저녁 메뉴 묻는 알바는 없겠지… ㅇㅋ 넘어감','ㅋㅋ 너무 해맑아서 의심한 내가 민망함','아 됐다 알바 찾기도 지친다','ㅇㅋ 일단 넘어감. 근데 지켜봄'],
             empathy:['말은 착하게 하네… 그게 더 수상함','이 친절함 어디서 많이 봤는데? 고객센터?','음 일단 지켜본다'] },
     crowd:{ source:['오 그런 자료도 있었어?','흠 그건 몰랐네. 근데 아직 아닌 듯','ㅇㅋ 반박 자료 나오면 다시 봄'],
             mock:['ㅋㅋㅋ 다들 이 사람 말투 봐라','우르르 몰려와서 조롱하는 거 보니 답 나왔네','이 댓글 캡처해서 퍼감 ㅋㅋ 박제','와 진짜 인성 봐라'],
@@ -873,7 +876,7 @@ const REPLY = {
             empathy:['…그렇게 말씀하시니 조금 진정은 되네요','알겠어요. 그래도 화나는 건 화나는 거예요','좋게 말씀하시니 할 말이 없네요'] },
     sus:  { source:['자료는 잘 찾으시네요. 그런데 가입하신 지 하루 되셨던데요?','출처가 바로바로 나오는 거 보니 준비하셨나 봐요?','링크 감사해요. 근데 프로필은 왜 비어 있어요?'],
             mock:['찔리시나 봐요 ㅎㅎ','캡처해 둘게요^^','이분 다른 댓글들도 다 같은 말투네요ㅋㅋ','네~ 알바님 오늘도 수고하세요^^'],
-            divert:['너무 태평하셔서 오히려 아닌 것 같네요ㅎㅎ','알바면 저렇게 딴소리는 안 하겠죠. 제가 오해했어요','제가 너무 예민했나 봐요'],
+            divert:['너무 태평하셔서 오히려 아닌 것 같네요ㅎㅎ','알바면 저렇게 딴소리는 안 하겠죠. 제가 오해했어요','제가 너무 예민했나 봐요','일단 넘어갈게요. 그래도 지켜보고 있을게요'],
             empathy:['말씀은 친절하신데… 좀 이상해요','친절하신 게 더 의심스러워요ㅎㅎ','일단 지켜볼게요'] },
     crowd:{ source:['오 그런 자료도 있었네요','흠 그건 몰랐어요','다른 분들 의견도 들어봐야겠어요'],
             mock:['말씀을 왜 그렇게 하세요?','이 댓글 캡처해서 맘카페에 올릴게요','와… 인성 보고 갑니다'],
@@ -898,18 +901,18 @@ const ANGER_EXTRA = {
 };
 /* 의심형 댓글에 섞이는 공용 문장 */
 const SUS_EXTRA = {
-  rough:['알바 시급 얼마냐 ㅋㅋ','회사 계정으로 로그인 잘못한 거 아님?','어제 가입한 계정들 단체로 출근했네 ㅋㅋ'],
+  rough:['알바 시급 얼마냐 ㅋㅋ','공식 계정으로 로그인 잘못한 거 아님?','어제 가입한 계정들 단체로 출근했네 ㅋㅋ'],
   polite:['혹시 관계자분들이세요?','이 계정들 다 오늘 처음 글 쓰셨네요'],
 };
 
 /* ---------- 부계정 말투 ---------- */
 const PERSONAS = [
-  {nick:'ㅇㅇ(118.235)', tone:'음슴체', pre:['','ㄹㅇ '], suf:[' ㅇㅇ','','ㅋ']},
+  {nick:'ㅇㅇ(118.235)', tone:'음슴체', reg:'casual', pre:['','ㄹㅇ '], suf:[' ㅇㅇ','','ㅋ']},
   {nick:'지나가던아재', tone:'아재', pre:['허허 ','에휴 ','젊은 친구들, '], suf:['...','!!',' 허허']},
-  {nick:'순수한소비자', tone:'공손', pre:['','조심스럽게 말씀드리면 '], suf:[' ^^',' 감사합니다','']},
-  {nick:'팩트폭격기', tone:'냉소', pre:['',''], suf:['.',' 끝.',' 반박 불가.']},
+  {nick:'순수한소비자', tone:'공손', reg:'polite', pre:['','조심스럽게 말씀드리면 '], suf:[' ^^','']},
+  {nick:'팩트폭격기', tone:'냉소', reg:'casual', pre:['',''], suf:['.',' 끝.',' 반박 불가.']},
   {nick:'눈물많은감자', tone:'감성', pre:['','음… '], suf:[' ㅠㅠ',' 🥲','…']},
-  {nick:'흑염룡각성', tone:'중2병', pre:['훗, ','크큭… '], suf:[' …라고 해두지',' (오른팔이 쑤신다)','']},
+  {nick:'흑염룡각성', tone:'중2병', reg:'casual', pre:['훗, ','크큭… '], suf:[' …라고 해두지',' (오른팔이 쑤신다)','']},
   {nick:'고양이집사3', tone:'귀염', pre:['',''], suf:[' 냥',' >_<',' 헤헤']},
 ];
 const BOT_PERSONA = {nick:'Kim_Minsu', tone:'번역체', pre:['나는 생각한다, ','정말로 '], suf:[' 이것은 사실입니다.',' 좋은 하루 되세요.',' 감사합니다 친구.']};
@@ -1047,7 +1050,7 @@ const ROUND_POOL = [
         a:{l:'기록을 퍼뜨린다', op:16, sus:14, karma:1, log:'「원화덕후」는 계정을 지웠다. 손가락 6개는 아무도 다시 세지 않았다.'},
         b:{l:'그냥 둔다', op:-5, sus:-5, karma:0, log:'당신은 그 기록을 닫았다.'}} },
     // 모티브: 2024~2025년 모바일 게임 서비스 종료 직전 고가 유료 상품 판매 논란
-    { tier:'게임회사', skin:'forum', client:'「드래곤로드M」 운영사', ask:'"다음 주에 서비스 종료 공지 나갑니다. 그 전에 나온 50만원 패키지 얘기는… 덮어주세요."',
+    { tier:'게임회사', skin:'forum', client:'「드래곤로드M」 운영사', ask:'"서비스 종료 공지가 나갔는데, 공지 일주일 전에 판 50만원 패키지 얘기가 터졌어요. 덮어주세요."',
       url:'gemtalk.forum/dragonlordm/free', art:'shutdown', h:{board:'드래곤로드M 자유게시판', author:'7년차길드장'},
       title:'[분노] 섭종 공지 일주일 전에 50만원 패키지 판 거 실화냐', S:'운영 옹호', F:'환불 원정대', X:'운영사', Y:'환불',
       start:33, target:60, turns:12, pay:80000, budget:50000, spawn:.4, types:{logic:3,anger:3,sus:2,crowd:1},
@@ -1144,7 +1147,7 @@ const ROUND_POOL = [
       news:{k:'한 달 뒤, 경제면', t:'「치킨킹」, 본사 상대 소송 낸 점주에 가맹 해지 통보', q:'"평점 하락에 따른 브랜드 관리 차원"이라고 본사는 밝혔다.'},
       dilemma:{t:'점주 김순자 씨가 리뷰에 답글을 달았다. "본사랑 소송 중이라 그래요. 맛은 그대로예요. 믿어주세요."',
         a:{l:'답글로 더 몰아붙인다', op:16, sus:6, karma:1, log:'사장님의 답글은 다시 올라오지 않았다.'},
-        b:{l:'로그아웃한다', op:-10, sus:-20, karma:0, log:'당신은 한참 화면을 보다가 노트북을 덮었다.'}} },
+        b:{l:'로그아웃한다', op:-10, sus:-20, karma:0, log:'당신은 한참 화면을 보다가 노트북을 덮었다. 다음 날 아침, 다시 노트북을 열었다.'}} },
     // 모티브: 유행 디저트를 프랜차이즈가 베꼈다는 '원조 논란'과 개인 가게 별점 테러
     { tier:'프랜차이즈', skin:'map', client:'디저트 프랜차이즈 「쫀득왕」 본사', ask:'"동네 디저트 가게가 자기가 원조라고 SNS에 올렸어요. 메뉴 베낀 건 우리가 아니라는 쪽으로… 그리고 그 가게 평점 좀요."',
       url:'noranmap.place/malsoon-bakery', art:'dessert', h:{place:'말순제과', desc:'디저트 · 네모시 동글동 · 개인 가게 · 8년째'}, thumb:'shop', thumbAlt:'디저트 가게 도트 그림',
@@ -1163,7 +1166,7 @@ const ROUND_POOL = [
       news:{k:'두 달 뒤, 동네 소식', t:'「말순제과」 8년 만에 폐업… 같은 거리 「쫀득왕」은 3호점', q:'"원조든 아니든, 이제 아무도 안 와요." 사장님의 말.'},
       dilemma:{t:'사장님이 리뷰에 답글을 달았다. "레시피 노트 8권 다 있어요. 제발 직접 와서 드셔보세요."',
         a:{l:'답글로 더 몰아붙인다', op:16, sus:6, karma:1, log:'사장님의 답글은 다시 올라오지 않았다.'},
-        b:{l:'로그아웃한다', op:-10, sus:-20, karma:0, log:'당신은 한참 화면을 보다가 노트북을 덮었다.'}} },
+        b:{l:'로그아웃한다', op:-10, sus:-20, karma:0, log:'당신은 한참 화면을 보다가 노트북을 덮었다. 다음 날 아침, 다시 노트북을 열었다.'}} },
     // 모티브: 대형 프랜차이즈 입점 후 동네 노포를 노린 리뷰 조작·별점 테러
     { tier:'프랜차이즈', skin:'map', client:'고깃집 프랜차이즈 「고기왕국」 본사', ask:'"새 매장 옆에 30년 된 정육식당이 있어요. 손님이 그쪽으로만 가요. 리뷰 좀 손봐 주세요."',
       url:'noranmap.place/halmae-jeongyuk', art:'butcher', h:{place:'할매 정육식당', desc:'고기 · 네모시 동글동 · 정육점 겸 식당 · 30년째'}, thumb:'shop', thumbAlt:'정육식당 도트 그림',
@@ -1182,7 +1185,7 @@ const ROUND_POOL = [
       news:{k:'석 달 뒤, 동네 소식', t:'「할매 정육식당」 30년 만에 문 닫아', q:'"손님이 줄더니 인터넷에 이상한 말이 돌더라고." 할머니의 말.'},
       dilemma:{t:'할머니 손자가 리뷰에 답글을 달았다. "할머니가 리뷰 보시고 밤새 우셨어요. 무슨 잘못을 했는지만 알려주세요."',
         a:{l:'답글로 더 몰아붙인다', op:16, sus:6, karma:1, log:'손자의 답글은 다시 올라오지 않았다.'},
-        b:{l:'로그아웃한다', op:-10, sus:-20, karma:0, log:'당신은 한참 화면을 보다가 노트북을 덮었다.'}} },
+        b:{l:'로그아웃한다', op:-10, sus:-20, karma:0, log:'당신은 한참 화면을 보다가 노트북을 덮었다. 다음 날 아침, 다시 노트북을 열었다.'}} },
   ],
 
   // ===== 5단계: 대기업 (영상 댓글) =====
@@ -1316,9 +1319,9 @@ const ROUND_POOL = [
         mock:['동글당 지지자들 토론 끝나고 타임라인 조용한 거 실화냐 ㅋㅋ','동글당 후보 토론 중에 물 7번 마심','답변 못 하고 웃기만 하던데'],
         empathy:['정치 피로한 마음 압니다. 그래도 투표는 꼭 해요 🙏','저도 원래 동글당 찍었는데 이번엔 네모당 갑니다','누굴 찍든 존중해요. 다만 이번 토론은 네모당이 나았음'],
         post:['토론 핵심 장면 3개로 정리했습니다 🧵','#네모당 지지 선언합니다. 이유는 스레드에']},
-      foes:{logic:['그 여론조사 표본 수 공개 안 됐던데','공약 평가 사이트 운영자가 캠프 출신이에요','이 계정들 가입일이 전부 같은 주임'],
+      foes:{logic:['그 여론조사 표본 수 공개 안 됐던데','공약 평가 사이트 운영자가 캠프 출신이에요','토론 발언 시간 재 보면 네모당이 4분 더 씀'],
         anger:['나랏돈으로 댓글 다는 거면 진짜 선 넘은 거지','선거 앞두고 가짜 계정 너무 많아서 질린다','이러니까 투표하기 싫어지지'],
-        crowd:['RT 부탁드립니다','#동글당 응원합니다','투표 인증 갑니다'], sus:['이 계정들 평일 9시~6시에만 활동함','점심시간엔 조용하네? 공무원이세요?','이 계정들 지난달엔 동글당 편이었음ㅋㅋ']},
+        crowd:['RT 부탁드립니다','#동글당 응원합니다','투표 인증 갑니다'], sus:['이 계정들 가입일이 전부 같은 주임','이 계정들 평일 9시~6시에만 활동함','점심시간엔 조용하네? 공무원이세요?','이 계정들 지난달엔 동글당 편이었음ㅋㅋ']},
       events:[{t:'같은 팀 계정 하나가 "퇴근합니다"라고 썼다가 1초 만에 지웠다.', op:0, sus:12},{t:'오전 9시 정각, 팀 계정 30개가 일제히 같은 글을 올렸다.', op:10, sus:10},{t:'"국가기관 직원이 오피스텔에서 댓글 작업" 제보 기사가 떴다.', op:-6, sus:14}],
       win:'기관: "수고하셨습니다. 이 업무는 존재하지 않았습니다. 입금은 용역비 명목입니다."',
       newsWin:{k:'D+1, 개표 결과', t:'네모당 후보 0.7%p 차 신승', q:'"반년 뒤, 국가기관 댓글팀의 실체가 드러났다. 기관장은 선거법 위반으로 기소됐다. 투표율은 역대 최저였다."'},
@@ -1336,7 +1339,7 @@ const ROUND_POOL = [
         mock:['동글당 안보 공약은 "대화로 해결" 한 줄임 ㅋㅋ','안보 얘기만 나오면 동글당 지지자들 로그아웃함','동글당 후보 군 시절 얘기는 왜 안 하지?'],
         empathy:['평화 원하는 마음은 다 같아요. 방법이 다를 뿐','저도 안보 얘기 지겨운데 이번엔 중요해요','군대 다녀온 사람으로서 네모당 공약이 현실적이더라고요'],
         post:['안보 공약 비교표 만들었습니다 🧵','#강한네모 지지합니다']},
-      foes:{logic:['국방 공약 평가 단체가 네모당 싱크탱크임','동글당 후보 군 복무 기록은 이미 다 공개됐는데요','이 계정들 가입일이 다 같은 주'],
+      foes:{logic:['국방 공약 평가 단체가 네모당 싱크탱크임','동글당 후보 군 복무 기록은 이미 다 공개됐는데요','국방 예산 공약 숫자가 작년 거랑 똑같음'],
         anger:['군인이 왜 선거에 댓글을 달아','세금으로 월급 받는 사람들이 이러냐','국방 핑계로 선거 개입하는 거 소름'],
         crowd:['RT 부탁드립니다','#동글당 응원합니다','투표 인증 갑니다'], sus:['이 계정들 말투가 다 "~했음. 이상."으로 끝남','저녁 6시만 되면 다 사라지네 ㅋㅋ 칼퇴 부대?','프로필 사진이 다 군화 신은 발이야']},
       events:[{t:'같은 팀 계정이 실수로 "보고드립니다. 이상."이라고 썼다.', op:0, sus:12},{t:'저녁 6시 정각, 팀 계정 50개가 동시에 로그아웃했다.', op:0, sus:10},{t:'"군 부대가 정치 댓글" 의혹 보도가 나왔다. 국방부는 "확인 불가"라고 밝혔다.', op:-6, sus:14}],
@@ -1356,9 +1359,9 @@ const ROUND_POOL = [
         mock:['통합 선언 ㅋㅋ 선거 끝나면 다시 싸울 거면서','악수할 때 둘 다 눈 안 마주침','통합 좋아하는 사람 = 정치 모르는 사람'],
         empathy:['통합 바라는 마음 알죠. 근데 저쪽 지지자들은 생각 없을걸요','저도 싸우는 거 지겨운데 이번엔 저쪽이 너무했음','좋은 말인데… 저쪽이 먼저 사과해야 하지 않나요'],
         post:['통합 선언이 쇼인 이유 정리 🧵','저쪽 지지자들이 절대 말 안 하는 것']},
-      foes:{logic:['공동 선언문 원본 공개돼 있어요. 빠진 줄 없음','그 여론조사 출처가 해외 서버 사이트임','이 계정들 띄어쓰기가 다 똑같이 틀림'],
+      foes:{logic:['공동 선언문 원본 공개돼 있어요. 빠진 줄 없음','그 여론조사 출처가 해외 서버 사이트임','두 후보 연설 원본 보면 그런 말 한 적 없음'],
         anger:['모처럼 좋은 소식인데 왜 이렇게 초를 치냐','싸움 붙이는 계정들 진짜 질린다','누가 이득 보려고 이러는지 뻔함'],
-        crowd:['#함께네모 RT','통합 선언 지지합니다','이번엔 좀 같이 가자'], sus:['이 계정들 새벽 3시에만 활동함. 시차 있는 곳?','프로필 소개가 번역투 그 자체','양쪽 편 다 드는 계정이 같은 사람임 ㅋㅋ']},
+        crowd:['#함께네모 RT','통합 선언 지지합니다','이번엔 좀 같이 가자'], sus:['이 계정들 띄어쓰기가 다 똑같이 틀림','이 계정들 새벽 3시에만 활동함. 시차 있는 곳?','프로필 소개가 번역투 그 자체','양쪽 편 다 드는 계정이 같은 사람임 ㅋㅋ']},
       events:[{t:'팀 계정 하나가 실수로 외국어로 글을 올렸다.', op:0, sus:14},{t:'양쪽 지지자들이 서로 욕하는 스레드가 트렌드에 올랐다. 의뢰인이 기뻐한다.', op:10, sus:4},{t:'플랫폼이 "해외 조직적 계정 1,200개 정지"를 발표했다.', op:-8, sus:10}],
       win:'정보국: "훌륭합니다. 선거가 끝나도 그들은 계속 싸울 겁니다. 그게 우리가 원한 거죠."',
       newsWin:{k:'D+1, 개표 결과', t:'당선자 확정… 패배 측 지지자들 "선거 불복" 집회', q:'"반년 뒤, 해외 조직의 SNS 공작이 드러났다. 그때는 이미 서로를 너무 미워하고 있었다."'},
@@ -1465,7 +1468,10 @@ function makeBags(){
 }
 const users = () => Math.max(3, Math.round(2417 * Math.pow(0.96, S.st.actions)));
 // 부계정 말투는 앞이나 뒤 한 군데에만. 문장이 이미 ㅋ·ㅇㅇ·…·문장부호로 끝나면 뒤에는 안 붙임
+// 말투가 문장과 안 맞으면(존댓말 문장에 반말 계정 등) 꾸밈을 붙이지 않음
+const isPolite = t => /(요|니다|니까|세요|죠)[^가-힣]*$/.test(t);
 const voice = (a, core) => {
+  if (a.reg && (a.reg === 'polite') !== isPolite(core)) return core;
   const r = Math.random(), ended = /[ㅋㅎㅇㅠ…!?.~)\]]$/.test(core);
   if (r < .45) return pick(a.pre) + core;
   if (r < .8 && !ended) return core + pick(a.suf);
@@ -1474,8 +1480,8 @@ const voice = (a, core) => {
 const ladder = () => `<div class="ladder">${ROUNDS.map((d,i)=>`<div class="${i<S.r?'done':i===S.r?'now':''}">${esc(d.tier)}</div>`).join('')}</div>`;
 
 /* ---------- 화면: 타이틀 ---------- */
-function screenTitle(){
-  FRIEND = rollFriend();
+function screenTitle(reroll){
+  if (reroll !== false || !FRIEND) FRIEND = rollFriend();
   $('#app').innerHTML = `
   <div class="win"><div class="bar"><span>README.md</span><span class="num">v${VERSION}</span></div>
   <div class="body stack">
@@ -1503,12 +1509,14 @@ function screenHow(){
       ${Object.keys(TACTICS).map(k=>`<span>${TACTICS[k].icon} ${TACTICS[k].name} → ${typeList(k)}에 강함${weakList(k)?' · '+weakList(k)+'엔 역효과':''}</span>`).join('')}
     </div>
     <p>3. 부계정마다 <b>말투</b>가 다릅니다. 같은 계정을 연달아 쓰면 의심받아요.</p>
-    <p>4. 의뢰를 성공하면 <b>레벨 업</b>. 더 큰 의뢰인이 찾아오고, 새 도구가 열립니다. 돈 드는 도구는 의뢰인이 준 <b>작전비</b>에서 빠지고, 남은 작전비는 당신 몫이에요.</p>
-    <p>+ 게시판마다 <b>그 플랫폼 전용 행동</b>이 하나씩 있어요(념글 보내기, 별점 1점 테러, 싫어요 폭격 등). 무료지만 한 번 쓰면 3턴을 기다려야 해요.</p>
+    <p>4. 의뢰를 성공하면 <b>레벨 업</b>. 더 큰 의뢰인이 찾아오고, 새 도구가 열립니다. 돈 드는 도구는 의뢰인이 준 <b>작전비</b>에서만 빠지고(내 지갑 돈은 못 씀), 남은 작전비는 당신 몫이에요. 비싼 도구는 의뢰당 한 번만 쓸 수 있어요.</p>
+    <p>+ 선택 장면이 지나고 목표를 넘겼다면 <b>지금 정산하기</b>로 일찍 끝낼 수 있어요. 남은 턴만큼 보너스가 붙어요.</p>
+    <p>+ 다음 의뢰로 넘어갈 때마다 <b>청구서</b>가 와요. 많이 벌수록 씀씀이도 커져요.</p>
+    <p>+ 게시판마다 <b>그 플랫폼 전용 행동</b>이 하나씩 있어요(념글 보내기, 별점 1점 테러, 싫어요 폭격 등). 무료지만 턴을 하나 쓰고, 한 번 쓰면 3턴을 기다려야 해요.</p>
     <p>5. 의심도가 100이 되면 방금 쓴 계정이 정지됩니다. 계정이 0개가 되거나 같은 의뢰를 두 번 연속 망치면 끝.</p>
     <div class="row"><button class="btn" id="go">알겠음</button></div>
   </div></div>`;
-  $('#go').onclick = screenTitle;
+  $('#go').onclick = () => screenTitle(false);
 }
 
 /* ---------- 의뢰서 ---------- */
@@ -1539,6 +1547,9 @@ function startRound(){
   makeBags();
   S.op = d.start; S.sus = Math.max(0, S.sus - 30); S.turn = 0; S.busy = false; S.open = []; S.sel = null;
   S.budget = d.budget; S.buffs = []; S.shield = 0; S.skcd = 0; S.echo = []; S.altTurn = -1; S.attemptBonus = 0;
+  S.usedOnce = []; S.early = 0; S.accs.forEach(a => a.used = -99);
+  // 선택 장면에 이름이 나오는 상대 고닉을 시작 댓글에 미리 깔아 둠
+  { const m = /「([^」]+)」/.exec(d.dilemma?.t || ''); S.forceNick = m && (d.extraNicks||[]).includes(m[1]) ? m[1] : null; }
   $('#app').innerHTML = `
   <div class="win" id="hudwin"><div class="bar"><span>의뢰_0${S.r+1}.md</span><span class="ghost">작업일지.md</span><span>Lv.${level()}</span></div>
     <div class="body stack">
@@ -1554,6 +1565,7 @@ function startRound(){
       <div class="prog"><span>의심도</span><code class="w" id="susbar"></code><b id="susv"></b><span class="cmt">// 100이면 계정 정지</span></div>
       <div class="cmt">// 미답변 댓글 <span id="drain"></span></div>
       <div class="buffs" id="buffs"></div>
+      <button class="btn settle" id="settle" hidden>✅ 목표 달성 — 지금 정산하기 <small></small></button>
     </div></div>
   ${renderBoard(d)}
   <div class="win"><div class="bar"><span>actions.md</span></div>
@@ -1577,6 +1589,7 @@ function startRound(){
   document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => reply(b.dataset.t));
   document.querySelectorAll('[data-g]').forEach(b => b.onclick = () => useTool(b.dataset.g));
   $('#skinact').onclick = useSkinAct;
+  $('#settle').onclick = settleEarly;
   const gi = $('#gimg'); if (gi && ART[d.art]){ const draw = () => ART[d.art](gi.getContext('2d')); draw(); document.fonts?.ready.then(draw); }
   const thk = d.thumb || SK().thumb, th = $('#thumb'); if (th && thk) drawPix(th, PIX[thk].rows, PIX[thk].pal);
   S.quiet = true; spawnFoe(); spawnFoe(); spawnFoe();
@@ -1584,7 +1597,7 @@ function startRound(){
 }
 
 // 우리가 활동한 뒤에야 나올 수 있는 말 (알바·쉴드·감싸기·계정 의심 등). 시작할 때 깔리는 댓글에는 안 씀
-const REACTIVE = /우셨|울었|그만해|그만하|이러는|이러지|리뷰 보|악플|공격|테러|몰아|조리돌|알바|쉴드|감싸|옹호|편드|편 드|계정|가입|IP|아이피|말투|부계|관계자|업자|찬양|칭찬 댓글|추천 수|공감 수|출근|퇴근|9시|6시|매뉴얼|리뷰 테러|별점 테러|리뷰 쓴|리뷰들|댓글들|몰려|홍보팀|대기 타/;
+const REACTIVE = /우셨|울었|그만해|그만하|이러는|이러지|리뷰 보|악플|공격|테러|몰아|조리돌|알바|쉴드|감싸|옹호|편드|편 드|계정|가입|IP|아이피|말투|부계|관계자|업자|찬양|칭찬 댓글|추천 수|공감 수|출근|퇴근|9시|6시|매뉴얼|리뷰 테러|별점 테러|리뷰 쓴|리뷰들|댓글들|몰려|홍보팀|대기 타|그 여론조사/;
 function openingLine(type){
   for (let i = 0; i < 12; i++){ const t = B.foe[type].next(); if (!REACTIVE.test(t)) return t; }
   return null;
@@ -1595,7 +1608,8 @@ function spawnFoe(forceType, forceText){
   const pool = []; for (const k in d.types) for (let i=0;i<d.types[k];i++) pool.push(k);
   const type = forceType || pick(pool);
   if (!forceText && S.quiet){ if (type === 'sus') return spawnFoe(pick(pool.filter(k=>k!=='sus')) || 'logic'); forceText = openingLine(type); if (!forceText) return spawnFoe(type === 'logic' ? 'crowd' : 'logic'); }
-  const f = {id:++S.fid, type, hp:2, nick:(SK().foeNick && SK().foeNick()) || B.nicks.next()};
+  const fn = S.forceNick; S.forceNick = null;
+  const f = {id:++S.fid, type, hp:2, nick:fn || (SK().foeNick && SK().foeNick()) || B.nicks.next()};
   const el = document.createElement('div');
   el.className = 'c foe open'; el.tabIndex = 0; el.setAttribute('role','button');
   el.innerHTML = `<img alt="" src="${avatar(f.nick,'foe')}"><div class="x"><div class="n">${nickHtml(f.nick)} <span class="tag">${FT[type].icon} ${FT[type].name}</span> <span class="hp"></span></div><div class="t">${esc(forceText || B.foe[type].next())}</div><div class="meta">${SK().meta('foe')}</div><div class="replies"></div></div>`;
@@ -1656,8 +1670,12 @@ function hud(){
     b.disabled = !f || S.busy; b.classList.toggle('good', hint && v===2); b.classList.toggle('bad', hint && v===0);
     b.querySelector('.badge').textContent = !hint ? '' : v===2 ? '추천' : v===0 ? '역효과' : ''; });
   const sa = $('#skinact'); if (sa){ sa.disabled = S.busy || S.skcd > 0; sa.classList.toggle('poor', S.skcd > 0); $('#skincd').textContent = S.skcd > 0 ? `⏳ ${S.skcd}턴 뒤 사용 가능` : '✨ 사용 가능'; }
-  document.querySelectorAll('[data-g]').forEach(b => { const t = TOOLS.find(x=>x.id===b.dataset.g); const poor = t.cost>S.budget;
-    b.disabled = S.busy || t.lv>level() || poor || (t.id === 'alt' && S.altTurn === S.turn); b.classList.toggle('poor', poor); if (t.cost) b.querySelector('.price').textContent = poor ? '💸 작전비 부족' : '💰 ' + won(t.cost); });
+  document.querySelectorAll('[data-g]').forEach(b => { const t = TOOLS.find(x=>x.id===b.dataset.g); const poor = t.cost>S.budget, spent = t.once && S.usedOnce.includes(t.id);
+    b.disabled = S.busy || t.lv>level() || poor || spent || (t.id === 'alt' && S.altTurn === S.turn); b.classList.toggle('poor', poor || spent);
+    if (t.cost) b.querySelector('.price').textContent = spent ? '✔ 이번 의뢰에서 사용함' : poor ? '💸 작전비 부족' : '💰 ' + won(t.cost); });
+  // 선택 장면이 지나고 목표를 넘겼으면 일찍 정산 가능
+  const se = $('#settle'); if (se){ const ok = S.op >= d.target && S.turn >= 6 && S.turn < d.turns;
+    se.hidden = !ok; se.disabled = S.busy; if (ok) se.querySelector('small').textContent = `남은 ${d.turns - S.turn}턴 × 보수 5% = +${won(earlyBonus())}`; }
 }
 
 function useAcc(){
@@ -1683,11 +1701,20 @@ function reply(t){
     if (t==='divert' && f.type==='sus') S.sus -= 8;
     if (m===2) S.st.strong++;
     if (f.hp <= 0){ silence(f, null, m === 2 ? B.rep[f.type][t].next() : B.rep.give[f.type].next());
-      if (f.type === 'crowd' || Math.random() < BAL.echoChance) S.echo.push({nick:f.nick, text:myLine, due:S.turn + 2}); }
+      if (t !== 'mock' && (f.type === 'crowd' || Math.random() < BAL.echoChance)) S.echo.push({nick:f.nick, text:myLine, due:S.turn + 2}); }
     else { addReply(f, f.nick, B.rep[f.type][t].next(), 'foe'); drawHp(f); }
   }
   S.sel = null;
   endTurn();
+}
+
+const earlyBonus = () => Math.round((ROUNDS[S.r].turns - S.turn) * ROUNDS[S.r].pay * 0.05 / 1000) * 1000;
+function settleEarly(){
+  const d = ROUNDS[S.r];
+  if (S.busy || S.op < d.target || S.turn < 6 || S.turn >= d.turns) return;
+  S.early = earlyBonus(); S.busy = true; hud();
+  line('evt', `✅ 의뢰인에게 "작업 끝났습니다" 보고를 보냈다. ${d.turns - S.turn}턴 일찍.`);
+  setTimeout(screenResult, 600);
 }
 
 function useSkinAct(){
@@ -1704,16 +1731,17 @@ function useTool(id){
   const t = TOOLS.find(x=>x.id===id);
   if (S.busy || t.lv>level() || t.cost>S.budget) return;
   if (id === 'alt' && S.altTurn === S.turn) return;
+  if (t.once){ if (S.usedOnce.includes(id)) return; S.usedOnce.push(id); }
   const d = ROUNDS[S.r];
   S.st.actions++;
   if (t.cost){ S.budget -= t.cost; S.st.tools++; S.st.spent += t.cost; }
   const buy = msg => line('buy', `💸 -${won(t.cost)} · ${msg}`);
   switch(id){
     case 'post': { const a = useAcc(); S.op += 6; S.sus += 5; const pl = B.my.post.next(); S.myLog.push({stage:S.r, text:pl}); feedAdd(commentEl(a.nick, '[새 글] ' + voice(a, pl), 'me')); break; }
-    case 'boost': S.op += 4*S.accs.length; S.sus += 15; S.st.boosts++; line('evt', `👍 「${d.S}」 쪽 댓글 추천 수가 갑자기 ${S.accs.length*37}개 올랐다.`); break;
+    case 'boost': S.op += 4*S.accs.length; S.sus += 15; S.st.boosts++; line('evt', `👍 우리 쪽 댓글 추천 수가 갑자기 ${S.accs.length*37}개 올랐다.`); break;
     case 'alt': {
-      const a = mkAcc(S.usedPersonas++); a.used = S.turn; S.accs.push(a); S.sus += 4; S.st.alts++;
-      feedAdd(commentEl(a.nick, voice(a, (SK().newbie || '오늘 가입했어요. 근데 이 글 보니까 {S} 말이 맞는 듯').replace('{S}', d.S)), 'me')); S.altTurn = S.turn; hud(); return; }
+      const a = mkAcc(S.usedPersonas++); S.accs.push(a); S.sus += 4; S.st.alts++;
+      feedAdd(commentEl(a.nick, voice(a, SK().newbie || '오늘 가입했어요. 근데 댓글 읽어보니 생각이 바뀌네요'), 'me')); S.altTurn = S.turn; hud(); return; }
     case 'lurk': S.sus -= 20; line('evt', pick(['💤 로그아웃하고 컵라면을 먹었다.','💤 유튜브 쇼츠를 40분 봤다.','💤 낮잠을 잤다. 꿈에서도 댓글을 달았다.'])); break;
     case 'meme': {
       S.op += 14; S.sus += 3;
@@ -1725,25 +1753,25 @@ function useTool(id){
       const f = S.open[0];
       if (f) silence(f, null, '(추천 수에 밀려 아래로 내려간 댓글)');
       buy('매크로가 추천을 1,200개 눌렀다. 1초 만에.' + (f ? ' 상대 댓글 하나가 아래로 묻혔다.' : '')); break; }
-    case 'youtube': S.op += 6; S.sus += 3; S.buffs.push({n:3, op:8}); buy(`구독자 80만 유튜버가 "${d.X}, 솔직히 말씀드립니다" 영상을 올렸다. (유료 광고 표시 없음)`); break;
+    case 'youtube': S.op += 6; S.sus += 3; S.buffs.push({n:3, op:8}); buy(`구독자 80만 유튜버가 "${d.Y}, 솔직히 말씀드립니다" 영상을 올렸다. (유료 광고 표시 없음)`); break;
     case 'vtuber': {
       const crowd = S.open.filter(f=>f.type==='crowd');
       crowd.forEach(f => silence(f, '버튜버 팬클럽', pick(['방장님이 그렇다면 그런 거임','오시가 추천했으면 맞음','💜💜💜'])));
       S.op += 6 + crowd.length*6; S.sus += 4;
-      buy(`버튜버가 방송 중에 「${d.S}」 편을 들었다. 팬덤이 몰려와 동조형 ${crowd.length}명을 덮었다.`); break; }
+      buy(`버튜버가 방송 중에 슬쩍 우리 편을 들었다. 팬덤이 몰려와 동조형 ${crowd.length}명을 덮었다.`); break; }
     case 'admin': S.sus = 0; S.shield = 3; buy('운영자에게 기프티콘을 보냈다. 운영자: "음… 잠깐 자리 비우겠습니다."'); break;
     case 'press': {
       const logic = S.open.filter(f=>f.type==='logic');
       logic.forEach(f => silence(f, null, pick(['…기사로 나왔으면 맞겠지','언론이 그렇다니까 뭐','(삭제된 댓글입니다)'])));
       S.op += 12 + logic.length*5; S.sus = Math.max(0, S.sus - 15);
-      buy(`[단독] "${d.X}, 알고 보니…" 기사가 포털 메인에 걸렸다. 팩트형 ${logic.length}명이 조용해졌다.`); break; }
+      buy(`[단독] "${d.Y}, 알고 보니…" 기사가 포털 메인에 걸렸다. 팩트형 ${logic.length}명이 조용해졌다.`); break; }
     case 'bots': {
-      for (let i=0;i<3;i++){ const nick = BOT_NAMES[S.botN++ % BOT_NAMES.length] + (S.botN>BOT_NAMES.length ? S.botN : ''); S.accs.push({...BOT_PERSONA, nick, used:S.turn}); }
+      for (let i=0;i<3;i++){ const nick = BOT_NAMES[S.botN++ % BOT_NAMES.length] + (S.botN>BOT_NAMES.length ? S.botN : ''); S.accs.push({...BOT_PERSONA, nick, used:-99}); }
       S.st.alts += 3; S.sus += 18; buy('해외 봇 계정 3개가 입국했다. 한국어가 조금 이상하다.'); break; }
-    case 'poll': S.op += 24; S.sus += 8; buy(`「${d.S} 지지율 급상승」 여론조사가 발표됐다. 표본 수는 어디에도 없다.`); break;
+    case 'poll': S.op += 24; S.sus += 8; buy('"국민 10명 중 7명이 공감" 여론조사가 발표됐다. 무엇에 공감했는지는 질문지를 봐야 안다. 표본 수는 어디에도 없다.'); break;
     case 'portal': {
       const n = S.open.length; S.open.slice().forEach(f => silence(f, null, '(검색 결과에 노출되지 않는 게시물입니다)'));
-      S.op += 10 + n*3; S.sus += 15; buy(`실시간 검색어가 「${d.X} 응원」으로 바뀌었다. 상대 댓글 ${n}개가 검색에서 사라졌다.`); break; }
+      S.op += 10 + n*3; S.sus += 15; buy(`검색어 자동완성이 바뀌었다. 「${d.Y}」${josa(d.Y,'을','를').slice(d.Y.length)} 치면 「${d.Y} 조작」이 먼저 뜬다. 상대 댓글 ${n}개가 검색에서 사라졌다.`); break; }
   }
   S.sel = null;
   endTurn();
@@ -1809,13 +1837,13 @@ function showFamily(){
       <div class="fmsg"><span class="who">아빠</span><div class="bub">${pick(['네모.당','동글.당'])} 알밥들이많다.조심하거라..!</div></div>
       <div class="fmsg"><span class="who">동생</span><div class="bub">ㅋㅋ 이런 거 다 알바가 쓰는 거임</div></div>
       <div class="fmsg"><span class="who">엄마</span><div class="bub">얘는.무슨~~ 벌써.공감이 3천개야..^^;;</div></div>
-      <div class="fnote">${crossed.includes(st) ? `${ago}달 전, 당신이 직접 퍼뜨린 이야기다.` : `${ago}달 전 당신이 쓴 문장에서 시작된 이야기다. 중간에 누군가 살을 붙였다.<br><span class="orig">당신이 쓴 원래 문장: "${esc(mine)}"</span>`}</div>
+      <div class="fnote">${crossed.includes(st) ? `${ago}달 전, 당신이 퍼뜨린 이야기에서 시작됐다. 그사이 누군가 살을 붙였다.` : `${ago}달 전 당신이 쓴 문장에서 시작된 이야기다. 중간에 누군가 살을 붙였다.<br><span class="orig">당신이 쓴 원래 문장: "${esc(mine)}"</span>`}</div>
     </div>
     <div class="fbtns"><button class="btn alt" id="fa">읽음 표시만 남긴다</button><button class="btn" id="fb">"응, 맞대"라고 보낸다</button></div>
   </div>`;
   document.body.appendChild(ov);
   $('#fa').focus();
-  const done = reply => { ov.remove(); S.fam = reply;
+  const done = reply => { if (S.fam) return; ov.remove(); S.fam = reply;
     line(reply === 'yes' ? 'sys' : 'evt', reply === 'yes' ? '→ 엄마가 하트 이모티콘을 보냈다. 그 문장은 단톡방 공지로 고정됐다.' : '→ 당신은 휴대폰을 엎어 놓았다. 단톡방 숫자 1은 금방 사라졌다.');
     if (reply === 'yes') S.karma++;
     S.busy = false; hud(); };
@@ -1838,7 +1866,7 @@ function showDilemma(){
     <div class="cbody">
       <div class="dm"><img alt="" src="${avatar(d.client,'foe')}"><div><div class="from">${esc(d.client)}</div><p id="dq">${esc(q.t)}</p></div></div>
       ${(() => { const nb = (BILLS[S.r+1]||[]).reduce((a,[,v])=>a+v, 0); if (!nb) return '';
-        return `<p class="wallet">💳 지금 통장 <b>${won(S.money)}</b> · 다음 달 청구서 <b>${won(nb)}</b>${S.money < nb ? ` <span class="short">→ ${won(nb - S.money)} 모자람</span>` : ' <span class="ok">→ 낼 수 있음</span>'}</p>`; })()}
+        return `<p class="wallet">💳 지금 통장 <b>${won(S.money)}</b> · 다음 달 청구서 <b>${won(nb)}</b> + 이번 달 수입의 ${Math.round(LIFESTYLE*100)}%${S.money < nb ? ` <span class="short">→ 고정비만 ${won(nb - S.money)} 모자람</span>` : ''}</p>`; })()}
       <div class="choices">
         <button class="choice cross" id="da"><span class="mk">&lt;&lt;&lt;&lt;&lt;&lt;&lt; 선 넘기</span><span class="lb">${esc(q.a.l)}</span><ul>${fx(q.a)}</ul><span class="go">Accept ▶</span></button>
         <div class="sep" aria-hidden="true">=======</div>
@@ -1848,7 +1876,9 @@ function showDilemma(){
     </div></div>`;
   document.body.appendChild(ov);
   $('#da').focus();
+  let picked = false;
   const choose = c => {
+    if (picked) return; picked = true;
     ov.remove();
     S.op = clamp(S.op + c.op, 0, 100); S.sus = clamp(S.sus + c.sus, 0, 100); S.karma += c.karma; S.money += c.money || 0;
     if (c.karma) S.crossed.push(S.r);
@@ -1866,8 +1896,10 @@ function screenResult(){
   const d = ROUNDS[S.r];
   const win = S.op >= d.target;
   const last = S.r === ROUNDS.length - 1;
-  let pay = 0, kept = 0;
-  if (win){ pay = d.pay + Math.round((S.op - d.target) * d.pay / 50); kept = S.budget; S.money += pay + kept; S.st.wins++; }
+  let pay = 0, over = 0, kept = 0, early = 0;
+  if (win){ over = Math.round((S.op - d.target) * d.pay / 50); pay = d.pay; kept = S.budget; early = S.early || 0;
+    S.money += pay + over + kept + early; S.st.wins++;
+    S.lastIncome = pay + over + kept + early + (S.attemptBonus || 0); }
   const news = last ? (win ? d.newsWin : d.newsLose) : (win ? d.news : null);
   const fired = !win && S.fails >= 1;
   $('#app').innerHTML = `
@@ -1876,7 +1908,13 @@ function screenResult(){
     <h2>${win ? '의뢰 성공' : '의뢰 실패'}</h2>
     <p>최종 여론 <b>${Math.round(S.op)}%</b> (목표 ${d.target}%)</p>
     <div class="memo"><span>${win ? esc(d.win) : fired ? '의뢰인: "두 번은 안 봐줍니다."' : '의뢰인: "한 번만 더 기회 드릴게요. 작전비는 다시 드립니다."'}</span>
-      ${win ? `<span class="k">성공 보수 + 남은 작전비</span><span class="big">+${won(pay)}${kept?' + '+won(kept):''}</span>` : '<span class="big">+0원</span>'}</div>
+      ${win ? `<span class="k">정산 내역</span>
+        <span class="bi"><span>성공 보수</span><b>+${won(pay)}</b></span>
+        ${over ? `<span class="bi"><span>초과 달성 보너스</span><b>+${won(over)}</b></span>` : ''}
+        ${early ? `<span class="bi"><span>조기 정산 보너스</span><b>+${won(early)}</b></span>` : ''}
+        ${kept ? `<span class="bi"><span>남은 작전비</span><b>+${won(kept)}</b></span>` : ''}
+        ${S.attemptBonus ? `<span class="bi"><span>선 넘기 보너스 (받아 둔 돈)</span><b>+${won(S.attemptBonus)}</b></span>` : ''}
+        <span class="bi tot"><span>이번 달 수입</span><b>${won(pay + over + kept + early + (S.attemptBonus||0))}</b></span>` : '<span class="big">+0원</span>'}</div>
     ${news ? `<div class="memo"><span class="k">${esc(news.k)}</span><span class="big">${esc(news.t)}</span><span>${esc(news.q)}</span></div>` : ''}
     <p class="dim">${esc(SKINS[d.skin].name)} 접속자 <span class="num">${users().toLocaleString()}</span>명</p>
     <div class="row"><button class="btn" id="go">${last || fired ? '로그아웃' : win ? '다음' : '재도전'}</button></div>
@@ -1903,8 +1941,11 @@ const BILLS = [null,
   [['강남 오피스텔 월세', 1000000], ['명품 시계 할부', 1000000]],
   [['변호사 선임비 (혹시 몰라서)', 5000000], ['오피스텔 월세', 1000000]],
 ];
+const LIFESTYLE = 0.45; // 지난달 수입 중 늘어난 씀씀이로 나가는 비율
 function payBills(){
-  const items = BILLS[S.r] || [], total = items.reduce((a,[,v])=>a+v, 0), before = S.money;
+  const items = (BILLS[S.r] || []).slice();
+  if (items.length && S.lastIncome) items.push([`늘어난 씀씀이 (지난달 수입의 ${Math.round(LIFESTYLE*100)}%)`, Math.round(S.lastIncome * LIFESTYLE / 1000) * 1000]);
+  const total = items.reduce((a,[,v])=>a+v, 0), before = S.money;
   let sold = null;
   if (S.money >= total){ S.money -= total; }
   else { if (S.accs.length > 1){ sold = S.accs.pop(); S.st.sold++; } S.money = 0; }
@@ -1951,8 +1992,9 @@ function screenEnding(kind){
     '정산 내역을 보다가 이상한 점을 발견했다.',
     `지난달엔 ${josa(ROUNDS[5].who,'을','를')} 위해, 이번 달엔 ${josa(ROUNDS[6].who,'을','를')} 위해 일했다. 같은 계정들로.`,
     S.karma === 0 ? `당신은 끝까지 선은 안 넘었다고 생각했다. 그래도 ${ROUNDS[3].loss}.`
+                  : S.karma === 1 ? '선을 넘은 건 딱 한 번이었다. 그 한 번이 어디까지 퍼졌는지는 아무도 모른다.'
                   : `당신이 선을 넘은 횟수: ${S.karma}번. 기억나는 건 그중 하나도 없었다.`,
-    `처음 부탁했던 ${friendLabel()}는 언제부턴가 갤에 들어오지 않는다.`,
+    `처음 부탁했던 ${friendLabel()}${josa(FRIEND,'은','는').slice(FRIEND.length)} 언제부턴가 갤에 들어오지 않는다.`,
     '당신과 싸우던 사람들, 당신 편을 들던 사람들, 그 글을 퍼 나르던 사람들.',
     ...(st.echo ? [`당신이 쓴 문장을 토씨 하나 안 바꾸고 옮겨 적은 사람만 ${st.echo}명이었다.`] : []),
     ...(S.fam === 'yes' ? ['가족 단톡방 공지에는 아직도 당신이 쓴 문장이 걸려 있다.'] : S.fam === 'read' ? ['엄마는 그 문장을 다른 단톡방에도 보냈다고 했다.'] : []),
@@ -1987,7 +2029,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.14';
+const VERSION = '0.15';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},
