@@ -6,6 +6,8 @@
 - Cloudflare Pages가 `site/` 폴더만 공개한다 (빌드 명령 없음, 출력 폴더 `site`). main에 올리면 자동 반영.
 - GitHub Pages는 꺼져 있다 (2026-11-02). 게임 주소는 Cloudflare Pages 하나뿐.
 - 개발 문서(CLAUDE.md, CHANGELOG.md, docs/)는 `site/` 밖에 둬서 공개되지 않게 한다.
+- `site/index.html` 첫 줄은 문서 머리말(doctype, charset, viewport)이다. 지우지 않는다. claude.ai 아티팩트로 올릴 때만 이 첫 줄을 뺀 사본을 쓴다.
+- 리뷰 저장: `functions/api/review.js` (Cloudflare Pages Functions). KV 바인딩 `REVIEWS`, 비밀 변수 `ADMIN_KEY` 필요. 확인 페이지 `site/reviews.html`.
 
 ## 구조 (site/index.html 안)
 - `ROUND_POOL`: 의뢰 7단계 데이터. 원소가 배열이면 새 게임마다 그중 하나를 무작위 선택(`rollRounds`). 문자열의 `{G}`(친구 닉), `{GL}`(친구 호칭), `{P}`(무작위 선수 이름)는 시작할 때 채워짐
@@ -28,7 +30,9 @@
 - 정치 소재는 가상 정당 양쪽에 균형 있게 배분한다.
 - 변경 후에는 브라우저에서 처음부터 끝까지 한 번 이상 돌려 콘솔 오류가 없는지 확인한다.
 - 버전을 올리면 `site/index.html`의 `VERSION` 값과 `CHANGELOG.md`를 함께 갱신한다.
-- 엔딩 리뷰(`SURVEY`)는 `FEEDBACK.url`이 비어 있으면 결과를 복사해 카톡으로 보내는 방식, 구글 설문 주소를 넣으면 자동 수집.
+- 엔딩 리뷰(`SURVEY`)는 먼저 `/api/review`로 저장을 시도하고, 실패하면 `FEEDBACK.url`(구글 설문) 또는 복사 방식으로 넘어간다.
+- 재도전하면 `S.cp`(그 의뢰 시작 때 상태)로 되돌린다.
+- 공감하는 척(`empathy`) 대사는 반드시 "공감 + 우리 쪽으로 돌리기" 구조로 쓴다. 상대 편만 들어주는 문장은 반응이 어긋난다.
 - 효과음은 넣지 않는다 (사용자 결정).
 - 갤러리 용어(갤, 념글, 고닉, 개념글)는 1단계(갤러리 스킨)에서만 쓴다.
 - 갤러리 사람들은 "형" 같은 호칭을 쓰지 않고 음슴체(~함, ~임, ㄱㄱ, ㄹㅇ)로 말한다. 친구 고닉 대사도 마찬가지.

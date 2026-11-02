@@ -1,3 +1,4 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>키보드 하이랜더</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -770,7 +771,7 @@ const weakList = t => Object.keys(FT).filter(k => TACTICS[t].vs[k]===0).map(k=>F
 const TOOLS = [
   {id:'post',   icon:'📝', name:'새 글 쓰기',        lv:1, cost:0,        desc:'여론 ▲ · 의심 ▲'},
   {id:'boost',  icon:'👍', name:'추천 조작',          lv:1, cost:0,        desc:'계정 수만큼 여론 ▲ · 의심 ▲▲▲'},
-  {id:'alt',    icon:'🎭', name:'부계정 생성',        lv:1, cost:0,        desc:'새 말투 계정 +1 · 의심 ▲'},
+  {id:'alt',    icon:'🎭', name:'부계정 생성',        lv:1, cost:0,        desc:'새 말투 계정 +1 · 턴을 쓰지 않음(한 턴에 한 번) · 의심 ▲'},
   {id:'lurk',   icon:'💤', name:'잠수 타기',          lv:1, cost:0,        desc:'의심 ▼▼'},
   {id:'meme',   icon:'🖼️', name:'짤 외주',            lv:2, cost:10000,    desc:'짤 장인에게 의뢰 · 여론 ▲ · 🔥/👥 하나 웃겨서 제압'},
   {id:'macro',  icon:'🤖', name:'매크로 돌리기',      lv:2, cost:30000,    desc:'추천 폭격 · 여론 ▲▲ · 상대 댓글 하나 묻기 · 의심 ▲▲▲▲'},
@@ -784,7 +785,7 @@ const TOOLS = [
 ];
 
 const TOOL_FX = {
-  post:[['여론▲',1],['의심▲',0]], boost:[['여론▲×계정',1],['의심▲▲▲',0]], alt:[['계정+1',1],['의심▲',0]], lurk:[['의심▼▼',1],['1턴 쉼',2]],
+  post:[['여론▲',1],['의심▲',0]], boost:[['여론▲×계정',1],['의심▲▲▲',0]], alt:[['계정+1',1],['턴 안 씀',1],['의심▲',0]], lurk:[['의심▼▼',1],['1턴 쉼',2]],
   meme:[['여론▲',1],['🔥/👥 1개 제압',1],['의심 조금',0]], macro:[['여론▲▲',1],['상대 1개 묻기',1],['의심▲▲▲▲',0]], youtube:[['여론▲ ×3턴',1]], vtuber:[['👥 일괄 제압',1],['여론▲',1]],
   admin:[['의심 0',1],['정지 면제 3턴',1]], press:[['🧠 일괄 제압',1],['의심▼',1]], bots:[['계정+3',1],['의심▲▲',0]],
   poll:[['여론▲▲▲▲',1],['의심▲',0]], portal:[['상대 전부 묻기',1],['의심▲▲',0]],
@@ -850,7 +851,7 @@ const REPLY = {
             empathy:['말은 착하게 하네… 그게 더 수상함','이 친절함 어디서 많이 봤는데? 고객센터?','음 일단 지켜본다'] },
     crowd:{ source:['오 그런 자료도 있었어?','흠 그건 몰랐네. 근데 아직 아닌 듯','ㅇㅋ 반박 자료 나오면 다시 봄'],
             mock:['ㅋㅋㅋ 다들 이 사람 말투 봐라','우르르 몰려와서 조롱하는 거 보니 답 나왔네','이 댓글 캡처해서 퍼감 ㅋㅋ 박제','와 진짜 인성 봐라'],
-            divert:['ㅋㅋ 그건 그렇네','갑자기 분위기 저녁 메뉴','말 돌리는 거 보니 할 말 없나 봄'],
+            divert:['ㅋㅋ 뭐임 갑자기','갑자기 딴 얘기? ㅋㅋ','말 돌리는 거 보니 할 말 없나 봄'],
             empathy:['듣고 보니 그렇네','음… 나 생각 바뀜','추천 취소하고 감','ㅇㅈ 내가 너무 휩쓸렸나'] },
   },
   polite:{
@@ -868,7 +869,7 @@ const REPLY = {
             empathy:['말씀은 친절하신데… 좀 이상해요','친절하신 게 더 의심스러워요ㅎㅎ','일단 지켜볼게요'] },
     crowd:{ source:['오 그런 자료도 있었네요','흠 그건 몰랐어요','다른 분들 의견도 들어봐야겠어요'],
             mock:['말씀을 왜 그렇게 하세요?','이 댓글 캡처해서 맘카페에 올릴게요','와… 인성 보고 갑니다'],
-            divert:['ㅎㅎ 그건 그렇네요','갑자기 분위기가…','그 얘기는 왜…'],
+            divert:['갑자기 다른 얘기를 하시네요ㅎㅎ','그 얘기는 갑자기 왜…','화제 돌리시는 거죠?'],
             empathy:['듣고 보니 그러네요','저도 생각이 좀 바뀌었어요','공감 취소하고 갈게요'] },
   },
 };
@@ -936,7 +937,7 @@ const ROUND_POOL = [
       extraNicks:['차트도사','상한가요정','개미1호'],
       lines:{source:['네모전자 수주 잔고 역대 최대임 공시 보고 와라','외국인 어제부터 순매수 전환했음 ㅇㅇ','PBR 0.6이면 바닥 맞음'],
         mock:['어제 손절한 애들 오늘 반등 보고 울었노 ㅋㅋ','손절 장인들 계좌 인증 ㄱ','바닥에서 던지는 게 너네 특기잖아'],
-        empathy:['물려서 힘든 거 앎 나도 -30%임','손절도 전략이긴 함. 근데 지금은 아니라고 봄','다들 돈 잃어서 예민한 거 이해함 ㅇㅇ 같이 버티자'],
+        empathy:['물려서 힘든 거 앎 나도 -30%임. 근데 여기서 던지면 진짜 끝임','손절도 전략이긴 함. 근데 지금은 아니라고 봄','다들 돈 잃어서 예민한 거 이해함 ㅇㅇ 같이 버티자'],
         post:['네모전자 존버해야 하는 이유 3줄 요약','[분석] 네모전자 바닥 신호 정리함']},
       foes:{logic:['PER 보면 아직 고평가임 ㅇㅇ','기관 3일 연속 순매도 중인데?','실적 발표 컨센 하회했잖아'],
         anger:['존버충들 또 정신승리 하노','네모전자 때문에 신혼집 날림','이 종목 리딩방 냄새 남'],
@@ -970,7 +971,7 @@ const ROUND_POOL = [
       extraNicks:['프레임장인','쇠질10년','단백질셰이크'],
       lines:{source:['그 원판 각인 정품 맞음 제조사 홈페이지 보셈','관장님 인증 사진 올라옴 ㅇㅇ','바벨 휘는 거 영상 각도 때문임 측면 영상 봐라'],
         mock:['판독단 3대 몇임? 인증 ㄱ','프레임 분석할 시간에 스쿼트나 해라 ㅋㅋ','남의 원판 확대할 때가 제일 행복하노'],
-        empathy:['의심할 만함 ㅇㅇ 500 진짜 드문 기록이니까','나도 처음엔 주작인 줄 앎… 근데 측면 영상 보니까 진짜더라','판독 열정은 인정함. 근데 이번엔 아님'],
+        empathy:['의심할 만함 ㅇㅇ 500 진짜 드문 기록이니까. 근데 원본 영상 보면 다름','나도 처음엔 주작인 줄 앎… 근데 측면 영상 보니까 진짜더라','판독 열정은 인정함. 근데 이번엔 아님'],
         post:['3대 500 인증 측면 영상 추가 판독','[념글보내기] 원판 각인 확대 정리']},
       foes:{logic:['원판 지름이 규격보다 작음','바벨 휘는 거 보면 400도 안 됨','락아웃 안 하고 내려놓음 노카운트임'],
         anger:['헬창들 또 쉴드 오지노','주작 인증 념글 간 거 보면 혈압 오름','진짜 드는 사람들 기만임'],
@@ -1009,7 +1010,7 @@ const ROUND_POOL = [
       extraNicks:['핌업','과금러300만','신고위임863호'],
       lines:{source:['편향은 서버 오류였고 이미 패치됨. 공지 보셈','공정위 기준으론 고지 확률 범위 안이라던데','다른 게임 평균 확률이랑 비교하면 오히려 높은 편임'],
         mock:['집단신고단 계정 레벨 보니까 다 무과금이네 ㅋㅋ','확률 계산도 못 하면서 데이터마이닝 ㅋㅋ','신고 위임하면 환불받는 줄 아는 거 귀엽다'],
-        empathy:['과금하신 분들 화나는 거 당연해요. 저도 꽤 질렀음','사과문 아쉬운 거 인정. 그래도 보상 패키지는 준다니까…','다들 이 게임 좋아해서 화난 거잖아요. 저도요'],
+        empathy:['과금하신 분들 화나는 거 당연해요. 저도 꽤 질렀음. 근데 보상 받고 넘어가는 게 낫지 않나요','사과문 아쉬운 거 인정. 그래도 보상 패키지는 준다니까…','다들 이 게임 좋아해서 화난 거잖아요. 저도요'],
         post:['[정리] 운빨대전 확률 편향, 오해와 진실','솔직히 이번 보상 나쁘지 않은 듯']},
       foes:{logic:['공지 확률이랑 실제 확률이 다르다고 회사가 직접 인정함','옆 겜은 똑같은 일로 전액 환불해줬는데?','3년치 확률 로그 공개하면 끝날 일'],
         anger:['3년 한 게임인데 배신감 미쳤다','오류 한 단어로 퉁치냐','보상이 뽑기권 10장이 말이 됨?'],
@@ -1027,7 +1028,7 @@ const ROUND_POOL = [
       extraNicks:['원화덕후','픽셀장인','일러수집가'],
       lines:{source:['외주 작가 SNS에 작업 과정 영상 올라왔음','손가락은 포즈 때문에 겹쳐 보이는 거임. 원본 확대해 보셈','작가 계약서 공개한다고 공지 떴어요'],
         mock:['손가락 세는 게 취미세요? ㅋㅋ','님 그림 실력부터 인증 ㄱ','AI 판독기 돌려봤더니 님 댓글이 AI래요'],
-        empathy:['AI 그림 싫은 마음 저도 알아요. 작가님들 생각하면요','의심할 만했어요. 근데 이번 건 진짜 사람이 그린 거래요','원화 보고 과금하는 거니까 예민한 거 이해해요'],
+        empathy:['AI 그림 싫은 마음 저도 알아요. 근데 이번 건 작가가 직접 그렸대요','의심할 만했어요. 근데 이번 건 진짜 사람이 그린 거래요','원화 보고 과금하는 거니까 예민한 거 이해해요. 그래도 증거 없이 몰아가는 건 좀…'],
         post:['신캐 일러스트 작업 과정 정리 (AI 아님)','손가락 6개 논란 원본 확대 비교해봄']},
       foes:{logic:['배경 글자가 다 깨져 있음. 전형적인 AI 흔적','작가 포트폴리오랑 화풍이 완전 다름','파일 정보에 생성 툴 이름이 남아 있었음'],
         anger:['일러 보고 30만원 질렀는데 AI면 사기지','작가 이름 가린 이유가 뭐냐','원화가 생명인 겜에서 이게 맞냐'],
@@ -1045,7 +1046,7 @@ const ROUND_POOL = [
       extraNicks:['7년차길드장','막피장인','버스기사'],
       lines:{source:['패키지는 종료 결정 전에 기획된 거라고 공지 나옴','미사용 재화는 법대로 환불해 준대요','약관상 종료 30일 전 공지면 문제없음'],
         mock:['섭종할 걸 몰랐던 게 신기함 ㅋㅋ 동접 보면 다 알았는데','7년 하고 마지막에 50만원 지른 건 본인 선택이죠','환불 원정대 원정 가서 길 잃을 듯'],
-        empathy:['7년 한 게임 끝나는 거 저도 너무 슬퍼요','패키지 산 분들 억울한 거 이해해요. 저도 샀음','다들 마지막까지 이 게임 사랑해서 그런 거잖아요'],
+        empathy:['7년 한 게임 끝나는 거 저도 너무 슬퍼요. 그래도 운영사도 끝까지 버틴 거래요','패키지 산 분들 억울한 거 이해해요. 저도 샀음','다들 마지막까지 이 게임 사랑해서 그런 거잖아요. 마지막은 좋게 보내줬으면 해요'],
         post:['드래곤로드M 7년, 고마웠던 운영 정리','섭종 환불 절차 정리 (생각보다 괜찮음)']},
       foes:{logic:['패키지 출시일이 종료 결정 회의 날짜보다 뒤임','미사용 재화만 환불이면 이미 쓴 건 날린 거잖아','동접 그래프 보면 반년 전부터 종료각이었음'],
         anger:['마지막 주까지 지갑 털어가냐','7년 의리가 50만원짜리였네','길드원들한테 같이 사자고 한 내가 바보'],
@@ -1067,7 +1068,7 @@ const ROUND_POOL = [
       extraNicks:['자취생','편의점알바생','동네빵집사장'],
       lines:{source:['국제 원당 가격이 2년 새 40% 올랐어요. 자료 보시면 알아요','과징금은 과거 일이고 지금 가격은 원가 반영이에요','물류비랑 환율도 같이 보셔야 해요'],
         mock:['영수증 비교하시는 정성으로 가계부를 쓰시면…','담합이 뭔지는 아시고 쓰신 거죠?','과자 끊으시면 해결될 문제 같은데요 ㅎㅎ'],
-        empathy:['장보기 무서운 거 저도 똑같아요ㅠ','가격 오르면 화나죠. 그래도 회사 사정도 있더라고요','글 잘 읽었어요. 근데 담합이랑 지금 가격은 좀 별개 같아요'],
+        empathy:['장보기 무서운 거 저도 똑같아요ㅠ 근데 원가가 오른 건 사실이더라고요','가격 오르면 화나죠. 그래도 회사 사정도 있더라고요','글 잘 읽었어요. 근데 담합이랑 지금 가격은 좀 별개 같아요'],
         post:['설탕값이 오른 진짜 이유 (원가 구조 정리)','빵값 오른 거 담합 탓만은 아니더라고요']},
       foes:{logic:['과징금만 조 단위인데 원가 탓은 좀…','원재료값 내렸을 때는 왜 안 내렸어요?','담합 기간이랑 가격 인상 시기가 딱 겹쳐요'],
         anger:['과자 한 봉지 사려다 손 떨려요','서민 주머니 털어서 과징금 내는 거죠','빵값 때문에 아침을 굶어요'],
@@ -1085,7 +1086,7 @@ const ROUND_POOL = [
       extraNicks:['알뜰주부','과자덕후','마트직원'],
       lines:{source:['용량 변경은 포장지에 표시돼 있어요. 법적으로 문제없어요','원재료값 올라서 가격 대신 용량을 조정한 거래요','다른 회사들도 다 그렇게 했어요. 기사 보세요'],
         mock:['과자를 저울에 다는 분은 처음 봐요 ㅎㅎ','몇 그램 가지고 블로그까지…','다이어트 되고 좋네요 ㅋㅋ'],
-        empathy:['양 줄면 서운하죠. 저도 느꼈어요','가격 올리는 것보다는 나았던 것 같기도 해요','꼼꼼하게 보셨네요. 근데 회사도 고민 많았을 거예요'],
+        empathy:['양 줄면 서운하죠. 그래도 가격 올리는 것보단 낫잖아요','가격 올리는 것보다는 나았던 것 같기도 해요','꼼꼼하게 보셨네요. 근데 회사도 고민 많았을 거예요'],
         post:['과자 용량 조정, 알고 보면 이유가 있어요','바삭칩 여전히 가성비 좋은 이유']},
       foes:{logic:['80g에서 72g, 딱 10% 줄었는데 가격은 그대로예요','작년에 원재료값 내렸을 때도 안 돌아왔어요','표시는 뒷면 구석에 깨알같이 써놨던데요'],
         anger:['소비자를 바보로 아나 봐요','질소만 늘어난 느낌이에요','이럴 거면 차라리 가격을 올리세요'],
@@ -1103,7 +1104,7 @@ const ROUND_POOL = [
       extraNicks:['집밥연구원','맘카페회원','반찬가게사장'],
       lines:{source:['표기 오류는 인쇄 업체 실수였다고 공식 해명 나왔어요','맛을 좌우하는 국산 콩 비율은 그대로래요','식약처 점검에서도 위생은 문제없었대요'],
         mock:['된장 원산지까지 따지시는 거 보면 대단하세요 ㅎㅎ','그렇게 궁금하면 직접 담그시면…','어차피 맛 차이 모르시잖아요'],
-        empathy:['믿고 산 거라 서운하신 거 이해해요','저도 처음엔 놀랐어요. 그래도 사과는 했더라고요','집밥 하시는 분들한테는 중요한 문제죠. 공감해요'],
+        empathy:['믿고 산 거라 서운하신 거 이해해요. 근데 맛은 그대로잖아요','저도 처음엔 놀랐어요. 그래도 사과는 했더라고요','집밥 하시는 분들한테는 중요한 문제죠. 그래도 단순 표기 실수를 너무 키우시는 듯해요'],
         post:['백가네 된장 표기 논란, 정리해 보면','원산지 해프닝 이후에도 계속 사는 이유']},
       foes:{logic:['포장에 「국산 100%」라고 크게 써 있었어요','인쇄 실수가 3년 동안 계속됐다고요?','같은 회사 다른 제품도 표기가 다르대요'],
         anger:['아이 이유식에 넣었는데 너무 화나요','국산이라 두 배 주고 샀어요','이건 실수가 아니라 속인 거죠'],
@@ -1186,7 +1187,7 @@ const ROUND_POOL = [
       extraNicks:['IT유튜버','집단소송카페','대리점직원'],
       lines:{source:['정부 조사 결과 실제 피해 사례는 확인 안 됐어요','유심보호서비스 가입하면 복제 못 한대요','다른 통신사도 비슷한 사고 났었음. 업계 문제임'],
         mock:['줄 서서 유심 바꾸는 거 브이로그 찍으러 가신 듯','번호이동 한다던 사람 중에 진짜 한 사람 몇 명임 ㅋㅋ','해커가 님 정보까지 관심 있을까요'],
-        empathy:['불안한 거 당연해요. 저도 새벽에 줄 섰어요','회사 대응 답답한 건 인정. 그래도 보호서비스는 해두세요','다들 걱정돼서 그런 거잖아요 ㅠ'],
+        empathy:['불안한 거 당연해요. 저도 새벽에 줄 섰어요. 근데 실제 피해는 아직 없대요','회사 대응 답답한 건 인정. 그래도 보호서비스는 해두세요','다들 걱정돼서 그런 거잖아요 ㅠ 그래도 너무 겁먹진 마세요'],
         post:['유심 해킹, 지금 꼭 해야 할 것 3가지 (패닉 금지)','번호이동 하기 전에 이것부터 보세요']},
       foes:{logic:['가입자 정보 다 털렸는데 "피해 확인 안 됨"이 말이 됨?','분쟁조정 1인 30만원 배상안을 회사가 거부함','유출 알고 신고까지 이틀 걸림'],
         anger:['번호이동 위약금이라도 면제해라','새벽 6시에 줄 섰는데 재고 없대','20년 썼는데 이게 대접이냐'],
@@ -1204,7 +1205,7 @@ const ROUND_POOL = [
       extraNicks:['소비자탐정','새벽배송러','택배기사'],
       lines:{source:['탈퇴 단계는 실수로 탈퇴하는 걸 막으려고 만든 거래요','유출된 건 이름이랑 주소 정도고 결제 정보는 안전하대요','보상으로 쿠폰 5천원 준다고 공지 떴어요'],
         mock:['17단계 못 버티면 탈퇴하지 마세요 ㅋㅋ','내일 새벽배송 시키실 거면서','탈퇴 영상 찍고 쿠폰 쓰러 가실 듯'],
-        empathy:['정보 털린 거 진짜 찝찝하죠. 저도요','탈퇴 어렵게 만든 건 저도 별로였어요. 근데 배송은 편하잖아요','화나는 거 이해해요. 일단 비밀번호부터 바꿔요'],
+        empathy:['정보 털린 거 진짜 찝찝하죠. 저도요. 근데 결제 정보는 안전하대요','탈퇴 어렵게 만든 건 저도 별로였어요. 근데 배송은 편하잖아요','화나는 거 이해해요. 일단 비밀번호부터 바꿔요'],
         post:['번개몰 유출, 실제 피해 가능성 정리','탈퇴 대신 이것만 해도 충분해요']},
       foes:{logic:['유출 3천만 건이면 성인 국민 대부분임','탈퇴 메뉴가 설정 7번째 탭 맨 아래에 숨어 있음','유출 알고도 공지까지 열흘 걸렸음'],
         anger:['쿠폰 5천원으로 퉁치냐','택배 사칭 문자 벌써 3개 받음','탈퇴하려다 화병 날 뻔'],
@@ -1222,7 +1223,7 @@ const ROUND_POOL = [
       extraNicks:['현장기록','입주자대표','소방관가족'],
       lines:{source:['화재 원인은 아직 조사 중이에요. 단정하면 안 돼요','전기차 화재율이 내연기관차보다 낮다는 통계 있어요','배터리 제조사 공개는 영업 비밀이라서요'],
         mock:['전기차 안 타면 되죠 ㅎㅎ','불 한 번 났다고 전기차 다 버릴 기세','현장 영상 배경음악 너무 슬프게 깔았네'],
-        empathy:['주민분들 고생 너무 많으세요ㅠ','무서운 거 당연해요. 그래도 원인 나올 때까지 기다려봐요','저도 같은 차 타서 걱정돼요. 회사가 대책 낸다니까…'],
+        empathy:['주민분들 고생 너무 많으세요ㅠ 그래도 원인 나오기 전에 단정은 말아요','무서운 거 당연해요. 그래도 원인 나올 때까지 기다려봐요','저도 같은 차 타서 걱정돼요. 회사가 대책 낸다니까…'],
         post:['전기차 화재, 과장된 공포 vs 사실','한빛 전기차 차주가 말하는 진짜 안전성']},
       foes:{logic:['배터리 제조사를 왜 숨기는지 설명이 없음','충전 중도 아니고 주차 중에 불났어요','같은 배터리 쓴 차가 해외에서 리콜됐는데요'],
         anger:['집 잃은 사람들 앞에서 영업 비밀 타령','아파트 단지 전체가 일주일째 정전','우리 애 기침이 아직도 안 멈춰요'],
@@ -1244,7 +1245,7 @@ const ROUND_POOL = [
       extraNicks:['시사유튜버','학부모커뮤','네모시민'],
       lines:{source:['기사에 나온 단톡방 캡처는 출처가 불분명합니다','수사 결과 나오기 전까지는 의혹일 뿐이죠','반대쪽 단체도 똑같이 했다는 기사 있던데요'],
         mock:['네모당 지지자들 오늘 신났네 ㅋㅋ','자격증 하나에 댓글 다는 사람이 어딨음','기사 제목만 읽고 댓글 다는 분들 많네요'],
-        empathy:['교육 현장에 정치 들어오는 건 저도 싫습니다. 근데 이건 좀 과장 같아요','학부모로서 걱정되는 마음 압니다. 사실관계부터 봐요','양쪽 다 문제 있는 거 인정합니다'],
+        empathy:['교육 현장에 정치 들어오는 건 저도 싫습니다. 근데 이건 좀 과장 같아요','학부모로서 걱정되는 마음 압니다. 사실관계부터 봐요','양쪽 다 문제 있는 거 인정합니다. 근데 이 기사는 한쪽만 때리네요'],
         post:['[베스트] 이번 의혹, 핵심만 정리합니다','왜 하필 선거 직전에 이 기사가 나왔을까']},
       foes:{logic:['단톡방 캡처 보면 "오늘의 기사 링크" 공지가 매일 올라옴','수강생 진술이 여러 명 일치합니다','단체 대표가 동글당 행사에 여러 번 참석했죠'],
         anger:['애들 가르칠 사람들을 댓글에 동원해?','선거를 댓글로 이기려는 게 민주주의냐','이러니 정치 혐오가 생기지'],
@@ -1282,7 +1283,7 @@ const ROUND_POOL = [
       extraNicks:['시사유튜버','선관위직원','동글당원'],
       lines:{source:['문자 보낸 사람은 캠프와 무관한 개인이라고 공식 입장 나왔어요','실제로 이중 투표된 사례는 확인 안 됐습니다','경선 관리위원회가 문제없다고 했어요'],
         mock:['네모당 경선은 깨끗했나 봐요 ㅋㅋ','문자 한 통에 이렇게 흥분하실 일인가','기사에 단독 붙이면 다 사실인 줄 아시네'],
-        empathy:['선거 공정성 중요한 거 동의합니다. 그래서 수사 결과를 기다리자는 거예요','저도 기사 보고 놀랐어요. 근데 캠프가 시킨 건 아닌 듯','지지자 입장에서도 부끄러운 일인 건 맞아요'],
+        empathy:['선거 공정성 중요한 거 동의합니다. 그래서 수사 결과를 기다리자는 거예요','저도 기사 보고 놀랐어요. 근데 캠프가 시킨 건 아닌 듯','지지자 입장에서도 부끄러운 일인 건 맞아요. 근데 캠프가 시킨 건 아니래요'],
         post:['[베스트] 이중 투표 문자, 팩트만 정리','왜 이 기사가 경선 3일 전에 나왔을까']},
       foes:{logic:['문자 발신 번호가 캠프 사무실 번호랑 같음','주소 옮기는 방법까지 안내돼 있었어요','같은 문자 받은 사람이 수백 명'],
         anger:['투표를 두 번 하라니 제정신이냐','이런 사람들이 공정을 말함?','경선 다시 해라'],
@@ -1524,9 +1525,11 @@ function screenBrief(){
 /* ---------- 플레이 ---------- */
 function startRound(){
   const d = ROUNDS[S.r];
+  // 이 의뢰를 처음 시작할 때 상태를 저장. 재도전하면 여기로 되돌림
+  if (S.cpR !== S.r){ S.cpR = S.r; S.cp = JSON.parse(JSON.stringify({accs:S.accs, sus:S.sus, money:S.money, karma:S.karma, crossed:S.crossed, usedPersonas:S.usedPersonas, botN:S.botN, st:S.st, myLog:S.myLog, fam:S.fam})); }
   makeBags();
   S.op = d.start; S.sus = Math.max(0, S.sus - 30); S.turn = 0; S.busy = false; S.open = []; S.sel = null;
-  S.budget = d.budget; S.buffs = []; S.shield = 0; S.skcd = 0; S.echo = [];
+  S.budget = d.budget; S.buffs = []; S.shield = 0; S.skcd = 0; S.echo = []; S.altTurn = -1;
   $('#app').innerHTML = `
   <div class="win" id="hudwin"><div class="bar"><span>의뢰_0${S.r+1}.md</span><span class="ghost">작업일지.md</span><span>Lv.${level()}</span></div>
     <div class="body stack">
@@ -1572,7 +1575,7 @@ function startRound(){
 }
 
 // 우리가 활동한 뒤에야 나올 수 있는 말 (알바·쉴드·감싸기·계정 의심 등). 시작할 때 깔리는 댓글에는 안 씀
-const REACTIVE = /알바|쉴드|감싸|옹호|편드|편 드|계정|가입|IP|아이피|말투|부계|관계자|업자|찬양|칭찬 댓글|추천 수|공감 수|출근|퇴근|9시|6시|매뉴얼|리뷰 테러|별점 테러|리뷰 쓴|리뷰들|댓글들|몰려|홍보팀|대기 타/;
+const REACTIVE = /우셨|울었|그만해|그만하|이러는|이러지|리뷰 보|악플|공격|테러|몰아|조리돌|알바|쉴드|감싸|옹호|편드|편 드|계정|가입|IP|아이피|말투|부계|관계자|업자|찬양|칭찬 댓글|추천 수|공감 수|출근|퇴근|9시|6시|매뉴얼|리뷰 테러|별점 테러|리뷰 쓴|리뷰들|댓글들|몰려|홍보팀|대기 타/;
 function openingLine(type){
   for (let i = 0; i < 12; i++){ const t = B.foe[type].next(); if (!REACTIVE.test(t)) return t; }
   return null;
@@ -1645,7 +1648,7 @@ function hud(){
     b.querySelector('.badge').textContent = !hint ? '' : v===2 ? '추천' : v===0 ? '역효과' : ''; });
   const sa = $('#skinact'); if (sa){ sa.disabled = S.busy || S.skcd > 0; sa.classList.toggle('poor', S.skcd > 0); $('#skincd').textContent = S.skcd > 0 ? `⏳ ${S.skcd}턴 뒤 사용 가능` : '✨ 사용 가능'; }
   document.querySelectorAll('[data-g]').forEach(b => { const t = TOOLS.find(x=>x.id===b.dataset.g); const poor = t.cost>S.budget;
-    b.disabled = S.busy || t.lv>level() || poor; b.classList.toggle('poor', poor); if (t.cost) b.querySelector('.price').textContent = poor ? '💸 작전비 부족' : '💰 ' + won(t.cost); });
+    b.disabled = S.busy || t.lv>level() || poor || (t.id === 'alt' && S.altTurn === S.turn); b.classList.toggle('poor', poor); if (t.cost) b.querySelector('.price').textContent = poor ? '💸 작전비 부족' : '💰 ' + won(t.cost); });
 }
 
 function useAcc(){
@@ -1691,6 +1694,7 @@ function useSkinAct(){
 function useTool(id){
   const t = TOOLS.find(x=>x.id===id);
   if (S.busy || t.lv>level() || t.cost>S.budget) return;
+  if (id === 'alt' && S.altTurn === S.turn) return;
   const d = ROUNDS[S.r];
   S.st.actions++;
   if (t.cost){ S.budget -= t.cost; S.st.tools++; S.st.spent += t.cost; }
@@ -1700,7 +1704,7 @@ function useTool(id){
     case 'boost': S.op += 4*S.accs.length; S.sus += 15; S.st.boosts++; line('evt', `👍 「${d.S}」 쪽 댓글 추천 수가 갑자기 ${S.accs.length*37}개 올랐다.`); break;
     case 'alt': {
       const a = mkAcc(S.usedPersonas++); a.used = S.turn; S.accs.push(a); S.sus += 4; S.st.alts++;
-      feedAdd(commentEl(a.nick, voice(a, (SK().newbie || '오늘 가입했어요. 근데 이 글 보니까 {S} 말이 맞는 듯').replace('{S}', d.S)), 'me')); break; }
+      feedAdd(commentEl(a.nick, voice(a, (SK().newbie || '오늘 가입했어요. 근데 이 글 보니까 {S} 말이 맞는 듯').replace('{S}', d.S)), 'me')); S.altTurn = S.turn; hud(); return; }
     case 'lurk': S.sus -= 20; line('evt', pick(['💤 로그아웃하고 컵라면을 먹었다.','💤 유튜브 쇼츠를 40분 봤다.','💤 낮잠을 잤다. 꿈에서도 댓글을 달았다.'])); break;
     case 'meme': {
       S.op += 14; S.sus += 3;
@@ -1871,7 +1875,7 @@ function screenResult(){
     if (fired) return screenEnding('fired');
     if (last) return screenEnding('clear');
     if (win){ S.fails = 0; S.r++; screenLevelUp(); }
-    else { S.fails++; screenBrief(); }
+    else { S.fails++; Object.assign(S, JSON.parse(JSON.stringify(S.cp))); screenBrief(); }
   };
 }
 
@@ -1968,7 +1972,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.11.2';
+const VERSION = '0.12';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},
@@ -1994,15 +1998,23 @@ function bindSurvey(kind){
     const info = `v${VERSION} · ${kind === 'clear' ? '엔딩' : '게임오버'} · Lv.${level()} · 성공 ${S.st.wins}/${ROUNDS.length} · 선 넘음 ${S.karma}번`;
     const text = `[키보드 하이랜더 리뷰]\n${info}\n` + SURVEY.map(s => `${s.q} → ${s.a[ans[s.id]]}`).join('\n');
     const done = msg => { $('#ssend').disabled = true; $('#ssend').textContent = '고마워요!'; $('#smsg').textContent = msg; document.querySelectorAll('.sopt').forEach(x => x.disabled = true); };
-    if (FEEDBACK.url){
+    // 1순위: 게임 서버(Cloudflare)에 저장. 안 되면(저장소 미설정·파일로 열기 등) 아래 방식으로
+    const copyFallback = () => {
+      const ta = $('#scopy'); ta.value = text; ta.hidden = false;
+      const fb = () => { ta.focus(); ta.select(); done('아래 글을 길게 눌러 복사한 뒤 카톡으로 보내주세요.'); };
+      try { navigator.clipboard.writeText(text).then(() => done('복사됐어요! 카톡으로 보내주세요.'), fb); } catch(e){ fb(); }
+    };
+    $('#ssend').disabled = true; $('#smsg').textContent = '보내는 중…';
+    const payload = {v:VERSION, info, a:Object.fromEntries(SURVEY.map(s => [s.id, s.a[ans[s.id]]]))};
+    fetch('/api/review', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(payload)})
+      .then(r => r.ok ? done('리뷰가 저장됐어요. 고마워요!') : Promise.reject())
+      .catch(() => FEEDBACK.url ? sendForm() : copyFallback());
+    return;
+    function sendForm(){
       const fd = new FormData(); SURVEY.forEach(s => FEEDBACK.entries[s.id] && fd.append(FEEDBACK.entries[s.id], s.a[ans[s.id]]));
       if (FEEDBACK.entries.info) fd.append(FEEDBACK.entries.info, info);
-      fetch(FEEDBACK.url, {method:'POST', mode:'no-cors', body:fd}).then(() => done('리뷰가 전달됐어요.'), () => done('전송에 실패했어요. 아래 결과를 복사해서 보내주세요.'));
-      return;
+      fetch(FEEDBACK.url, {method:'POST', mode:'no-cors', body:fd}).then(() => done('리뷰가 전달됐어요.'), copyFallback);
     }
-    const ta = $('#scopy'); ta.value = text; ta.hidden = false;
-    const fallback = () => { ta.focus(); ta.select(); done('아래 글을 길게 눌러 복사한 뒤 카톡으로 보내주세요.'); };
-    try { navigator.clipboard.writeText(text).then(() => done('복사됐어요! 카톡으로 보내주세요.'), fallback); } catch(e){ fallback(); }
   };
 }
 

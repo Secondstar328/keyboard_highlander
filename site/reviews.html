@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>키보드 하이랜더 리뷰 모음</title>
+<style>
+:root{--bg:#1b1b1f;--pane:#232328;--line:#34343b;--ink:#dcdde2;--dim:#868995;--acc:#a58bff;--warn:#f2777a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 "Nanum Gothic Coding",ui-monospace,monospace;padding:16px max(16px,env(safe-area-inset-left,0px))}
+main{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:20px;margin:0}
+.box{background:var(--pane);border:1px solid var(--line);border-radius:8px;padding:14px}
+input,button{font:inherit;padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+button{border-color:var(--acc);color:var(--acc);cursor:pointer}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.q{margin:8px 0 4px;font-weight:700}
+.bar{display:grid;grid-template-columns:9em 1fr 3em;gap:8px;align-items:center;font-size:13px}
+.bar i{display:block;height:10px;background:var(--acc);border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left;vertical-align:top}
+.dim{color:var(--dim)} .err{color:var(--warn)}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body><main>
+<h1>키보드 하이랜더 리뷰 모음</h1>
+<div class="box row"><input id="k" type="password" placeholder="비밀번호 (ADMIN_KEY)" autocomplete="current-password"><button id="go">불러오기</button><span id="msg" class="dim"></span></div>
+<div id="sum"></div>
+<div id="list"></div>
+</main>
+<script>
+const Q = {q1:'난이도', q2:'제일 재밌었던 것', q3:'댓글 현실감', q4:'다시 할 의향'};
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+try { document.getElementById('k').value = sessionStorage.getItem('rk') || ''; } catch(e){}
+async function load(){
+  const key = document.getElementById('k').value.trim(), msg = document.getElementById('msg');
+  msg.className = 'dim'; msg.textContent = '불러오는 중…';
+  try {
+    const r = await fetch('/api/review?key=' + encodeURIComponent(key), {cache:'no-store'});
+    if (!r.ok){ msg.className = 'err'; msg.textContent = r.status === 403 ? '비밀번호가 틀렸어요.' : '저장소가 아직 설정되지 않았어요.'; return; }
+    try { sessionStorage.setItem('rk', key); } catch(e){}
+    const data = await r.json(); msg.textContent = `리뷰 ${data.length}개`;
+    let html = '';
+    for (const q in Q){
+      const c = {}; data.forEach(d => { const a = d.a?.[q]; if (a) c[a] = (c[a]||0) + 1; });
+      const max = Math.max(1, ...Object.values(c));
+      html += `<div class="box"><div class="q">${Q[q]}</div>` + Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,v]) => `<div class="bar"><span>${esc(k)}</span><i style="width:${v/max*100}%"></i><span>${v}</span></div>`).join('') + '</div>';
+    }
+    document.getElementById('sum').innerHTML = html;
+    document.getElementById('list').innerHTML = `<div class="box scroll"><table><tr><th>시각</th><th>진행</th>${Object.values(Q).map(x=>`<th>${x}</th>`).join('')}</tr>` +
+      data.map(d => `<tr><td>${new Date(d.t).toLocaleString('ko-KR')}</td><td>${esc(d.info)}</td>${Object.keys(Q).map(q=>`<td>${esc(d.a?.[q]||'')}</td>`).join('')}</tr>`).join('') + '</table></div>';
+  } catch(e){ msg.className = 'err'; msg.textContent = '불러오지 못했어요: ' + e.message; }
+}
+document.getElementById('go').onclick = load;
+document.getElementById('k').onkeydown = e => { if (e.key === 'Enter') load(); };
+</script>
+</body></html>

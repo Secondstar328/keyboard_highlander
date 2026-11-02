@@ -105,6 +105,8 @@
 
 ```
 site/index.html         게임 전체 (HTML·CSS·JS 한 파일)
+site/reviews.html       리뷰 확인 페이지 (비밀번호 필요)
+functions/api/review.js 리뷰 저장 창구 (Cloudflare Pages Functions)
 docs/screenshots/       README용 스크린샷
 CHANGELOG.md            버전별 변경 기록
 ```
