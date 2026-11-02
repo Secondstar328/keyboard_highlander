@@ -7,7 +7,7 @@
 - GitHub Pages는 꺼져 있다 (2026-11-02). 게임 주소는 Cloudflare Pages 하나뿐.
 - 개발 문서(CLAUDE.md, CHANGELOG.md, docs/)는 `site/` 밖에 둬서 공개되지 않게 한다.
 - `site/index.html` 첫 줄은 문서 머리말(doctype, charset, viewport)이다. 지우지 않는다. claude.ai 아티팩트로 올릴 때만 이 첫 줄을 뺀 사본을 쓴다.
-- 폰트: 제목·작업대는 갈무리(`site/fonts/*.woff2`, 게임에 나오는 글자만 담은 부분 파일). **새 한글 문장을 추가하면 폰트를 다시 만들어야** 새 글자가 도트로 나온다 (안 하면 그 글자만 대체 폰트로 보임). 다시 만드는 법: galmuri 패키지(npm)의 ttf를 `pyftsubset 원본.ttf --text-file=글자목록 --flavor=woff2 --layout-features='*'`로, 글자 목록은 site/index.html의 모든 글자 + 영문·숫자·기호
+- 폰트: 제목·작업대는 갈무리(`site/fonts/*.woff2`, 게임에 나오는 글자만 담은 부분 파일). **새 한글 문장을 추가하면 폰트를 다시 만들어야** 새 글자가 도트로 나온다 (안 하면 그 글자만 대체 폰트로 보임). 다시 만드는 법: `bash tools/make-fonts.sh`
 - 게시판(`.board`)과 가족 단톡방은 진짜 웹처럼 일반 고딕을 쓴다 (도트 폰트 적용하지 않음)
 - 리뷰 저장: `functions/api/review.js` (Cloudflare Pages Functions). KV 바인딩 `REVIEWS`, 비밀 변수 `ADMIN_KEY` 필요. 확인 페이지 `site/reviews.html`.
 
@@ -40,5 +40,8 @@
 - 갤러리 사람들은 "형" 같은 호칭을 쓰지 않고 음슴체(~함, ~임, ㄱㄱ, ㄹㅇ)로 말한다. 친구 고닉 대사도 마찬가지.
 - 의뢰 시작 때 깔리는 댓글에는 우리 활동을 전제로 한 말(알바, 쉴드, 감싸기, 계정 의심 등, `REACTIVE`)과 의심형을 쓰지 않는다.
 - 상대 닉(`FOE_NICKS`)은 플랫폼 공용이라 갤러리풍 닉을 넣지 않는다.
+- "~노" 말투(긁혔노, 하노 등)는 쓰지 않는다. 지역 비하에서 시작된 말투다.
+- 재도전하면 계정·의심도 등은 의뢰 시작 때로 되돌리지만, 넘은 선(`karma`, `crossed`)과 그 보너스 돈은 남긴다.
+- 새 문장을 추가한 뒤에는 `bash tools/make-fonts.sh`로 도트 폰트를 다시 만든다.
 - 반응은 실제 인터넷처럼 거칠게 쓰되 초성 욕까지만. 혐오 표현(장애·성별·지역 비하)은 쓰지 않는다.
 - 사용자는 비개발자라 설명은 쉬운 말로 한다.
