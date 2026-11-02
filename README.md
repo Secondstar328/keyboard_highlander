@@ -11,6 +11,8 @@
 
 ## 플레이 방법
 
+- **웹에서 바로 플레이: https://secondstar328.github.io/keyboard_highlander/**
+
 - `index.html`을 내려받아 브라우저로 열면 바로 시작돼요.
 - 저장소를 공개하고 GitHub Pages를 켜면 웹 주소로도 플레이할 수 있어요 (아래 "웹에 올리기" 참고).
 

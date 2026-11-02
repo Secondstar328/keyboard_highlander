@@ -270,6 +270,18 @@ canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;b
 .player canvas.art{height:100%;width:auto;margin:0;border-radius:0}
 .b-post.sns canvas.art{width:100%;max-width:320px;border:1px solid var(--b-line)}
 
+/* 엔딩 리뷰 */
+.survey{display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);border-radius:8px;padding:14px;background:#ffffff06}
+.survey h2{font-size:17px}
+.sq p{font-size:14px;color:var(--head);margin-bottom:6px}
+.sopts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.sopt{background:transparent;border:1px solid var(--line);border-radius:6px;padding:8px 6px;font-size:13px;color:var(--ink)}
+.sopt:hover:not(:disabled){border-color:var(--acc)}
+.sopt.on{background:var(--acc);border-color:var(--acc);color:var(--bg);font-weight:700}
+.sopt:disabled{cursor:default}
+#scopy{width:100%;min-height:110px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px;font:12px var(--f-body)}
+@media (max-width:520px){.sopts{grid-template-columns:1fr 1fr}}
+
 /* 플랫폼 전용 행동 타일 */
 .tile.skinact{border-color:var(--key);background:#7fd1b912}
 .tile.skinact .ic{background:#7fd1b926}
@@ -1382,7 +1394,7 @@ const ladder = () => `<div class="ladder">${ROUNDS.map((d,i)=>`<div class="${i<S
 function screenTitle(){
   FRIEND = rollFriend();
   $('#app').innerHTML = `
-  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.9.4</span></div>
+  <div class="win"><div class="bar"><span>README.md</span><span class="num">v${VERSION}</span></div>
   <div class="body stack">
     <h1>키보드<br>하이랜더</h1>
     <canvas class="sprite" id="hero" aria-label="모니터 앞에 앉은 알바생 도트 그림"></canvas>
@@ -1793,9 +1805,52 @@ function screenEnding(kind){
       <span class="dim">선을 넘은 횟수</span><span class="num">${S.karma}</span>
       <span class="dim">성공한 의뢰</span><span class="num">${st.wins} / ${ROUNDS.length}</span>
     </div>
-    <div class="row line" style="animation-delay:${lines.length*D+1.8}s"><button class="btn" id="go">처음부터</button></div>
+    <div class="line" style="animation-delay:${lines.length*D+1.8}s">${surveyHtml()}</div>
+    <div class="row line" style="animation-delay:${lines.length*D+2.0}s"><button class="btn" id="go">처음부터</button></div>
   </div></div>`;
   $('#go').onclick = screenTitle;
+  bindSurvey(kind);
+}
+
+/* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
+   FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
+   비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
+const VERSION = '0.9.5';
+const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
+const SURVEY = [
+  {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},
+  {id:'q2', q:'제일 재밌었던 건?', a:['플랫폼별 화면','댓글 상성 싸움','선 넘기 선택지','엔딩 반전']},
+  {id:'q3', q:'댓글 반응, 현실이랑 비슷했어요?', a:['완전 현실','꽤 비슷','좀 어색','많이 어색']},
+  {id:'q4', q:'다시 해볼 생각 있어요?', a:['지금 바로','업데이트되면','친구한테 추천함','별로']},
+];
+const surveyHtml = () => `<div class="survey" id="survey">
+  <h2>리뷰 좀 부탁드려요 <span class="dim">(10초)</span></h2>
+  ${SURVEY.map(s=>`<div class="sq"><p>${esc(s.q)}</p><div class="sopts">${s.a.map((a,i)=>`<button class="sopt" data-q="${s.id}" data-i="${i}">${esc(a)}</button>`).join('')}</div></div>`).join('')}
+  <div class="row"><button class="btn" id="ssend" disabled>리뷰 보내기</button><span class="dim" id="smsg">4개 다 고르면 보낼 수 있어요</span></div>
+  <textarea id="scopy" readonly hidden></textarea>
+</div>`;
+function bindSurvey(kind){
+  const ans = {};
+  document.querySelectorAll('.sopt').forEach(b => b.onclick = () => {
+    ans[b.dataset.q] = +b.dataset.i;
+    document.querySelectorAll(`.sopt[data-q="${b.dataset.q}"]`).forEach(x => x.classList.toggle('on', x === b));
+    const n = Object.keys(ans).length; $('#ssend').disabled = n < SURVEY.length;
+    $('#smsg').textContent = n < SURVEY.length ? `${SURVEY.length - n}개 남았어요` : '준비 완료';
+  });
+  $('#ssend').onclick = () => {
+    const info = `v${VERSION} · ${kind === 'clear' ? '엔딩' : '게임오버'} · Lv.${level()} · 성공 ${S.st.wins}/${ROUNDS.length} · 선 넘음 ${S.karma}번`;
+    const text = `[키보드 하이랜더 리뷰]\n${info}\n` + SURVEY.map(s => `${s.q} → ${s.a[ans[s.id]]}`).join('\n');
+    const done = msg => { $('#ssend').disabled = true; $('#ssend').textContent = '고마워요!'; $('#smsg').textContent = msg; document.querySelectorAll('.sopt').forEach(x => x.disabled = true); };
+    if (FEEDBACK.url){
+      const fd = new FormData(); SURVEY.forEach(s => FEEDBACK.entries[s.id] && fd.append(FEEDBACK.entries[s.id], s.a[ans[s.id]]));
+      if (FEEDBACK.entries.info) fd.append(FEEDBACK.entries.info, info);
+      fetch(FEEDBACK.url, {method:'POST', mode:'no-cors', body:fd}).then(() => done('리뷰가 전달됐어요.'), () => done('전송에 실패했어요. 아래 결과를 복사해서 보내주세요.'));
+      return;
+    }
+    const ta = $('#scopy'); ta.value = text; ta.hidden = false;
+    const fallback = () => { ta.focus(); ta.select(); done('아래 글을 길게 눌러 복사한 뒤 카톡으로 보내주세요.'); };
+    try { navigator.clipboard.writeText(text).then(() => done('복사됐어요! 카톡으로 보내주세요.'), fallback); } catch(e){ fallback(); }
+  };
 }
 
 screenTitle();
