@@ -434,11 +434,11 @@ const SKINS = {
     head:d=>`<div class="b-top"><b class="logo">겜톡</b><span>${esc(d.h.board)}</span></div>
       <div class="b-post"><span class="badge">🔥 이슈</span><div class="t">${esc(d.title)}</div><div class="m">${esc(d.h.author)} · 조회 ${R(5000,30000).toLocaleString()} · 추천 <span id="bstat"></span></div></div>`,
     stat:()=>Math.max(0, Math.round(420 - S.op*4)), meta:()=>`Lv.${R(1,99)} · 추천 ${R(0,50)}`},
-  blog:{name:'초록블로그', place:'블로그 댓글', url:'chorok.blog', cnt:'댓글', thumb:'snack',
+  blog:{name:'초록블로그', place:'블로그 댓글', tone:'polite', url:'chorok.blog', cnt:'댓글', thumb:'snack',
     head:d=>`<div class="b-top"><b class="logo">초록블로그</b><span>${esc(d.h.blog)}</span></div>
       <div class="b-post"><div class="t">${esc(d.title)}</div><div class="m">${esc(d.h.author)} · 2026. 11. 2.</div><canvas class="thumb" id="thumb" aria-label="${esc(d.thumbAlt||'')}"></canvas><div class="m">♡ 공감 <span id="bstat"></span></div></div>`,
     stat:()=>Math.round(20 + S.op*4), meta:()=>`${R(1,59)}분 전 · 답글`},
-  map:{name:'노랑지도', place:'지도 앱 방문자 리뷰', url:'noranmap.place', cnt:'방문자 리뷰', thumb:'shop',
+  map:{name:'노랑지도', place:'지도 앱 방문자 리뷰', tone:'polite', url:'noranmap.place', cnt:'방문자 리뷰', thumb:'shop',
     head:d=>`<div class="b-top"><b class="logo">노랑지도</b><span class="search">🔍 ${esc(d.h.place)}</span></div>
       <div class="b-place"><canvas class="thumb" id="thumb" aria-label="${esc(d.thumbAlt||'')}"></canvas><div><b class="pn">${esc(d.h.place)}</b><div class="m">${esc(d.h.desc)}</div><div class="rate" id="bstat"></div></div></div>`,
     stat:()=>{ const v = 5 - 3.6*S.op/100, n = Math.round(v); return `<span class="star">${'★'.repeat(n)}</span>${'☆'.repeat(5-n)} ${v.toFixed(1)}`; },
@@ -524,27 +524,66 @@ const FOE_LINES = {
   sus:['오늘 가입한 계정이 왜 이렇게 많음?','말투 다 비슷한데 알바 아님?','이쪽 편 댓글 추천 수 이상한데','이 사람 어제는 다른 닉이었음','편드는 계정들 가입일 다 같음ㅋㅋ'],
   crowd:['ㅇㅈ 나도 {Y} 편','{F} 다들 모여라','다들 {Y}라던데','추천 누르고 감','{Y} 편 손'],
 };
-/* 상대 반응표: 상대 유형 × 내가 쓴 대응. 상성(2=제압, 1=버팀, 0=역효과)에 맞춰 반응이 다름 */
+/* 상대 반응표: 말투 두 종류(rough=커뮤니티·뉴스·영상·SNS, polite=블로그·지도 리뷰) × 상대 유형 × 내가 쓴 대응.
+   상성(2=제압, 1=버팀, 0=역효과)에 맞춰 반응이 다름. 혐오 표현(장애·성별·지역 비하)은 쓰지 않음 */
 const REPLY = {
-  logic:{ source:['…출처 보니까 내가 잘못 알았네','아 그 자료는 못 봤음. 인정','(삭제된 댓글입니다)'],
-          mock:['비꼬지 말고 근거나 대','말 돌리네 ㅋㅋ 그래서 근거는?'],
-          divert:['말 돌리지 마시고요','갑자기 딴소리? 질문에 답이나 해'],
-          empathy:['공감 말고 근거를 달라고요','감성팔이 말고 숫자로 말해','이거 완전 알바 화법인데?'] },
-  anger:{ source:['누가 출처 달래? 태도가 문제라고','출처 들이밀면 다냐 ㅋㅋ 더 열받네','표 붙여넣는 거 보니 알바 맞네'],
-          mock:['아 됐다 내가 무슨 말을 하냐','하… 안 해 그만할래','(탈퇴한 사용자)'],
-          divert:['…배는 고프네','말 돌리지 마 아직 안 끝났어'],
-          empathy:['…그렇게 말하니까 좀 누그러지네','알았어. 근데 아직 화난 거 맞음'] },
-  sus:  { source:['자료는 그럴듯한데 계정이 수상한 건 그대로임','출처는 봤고… 근데 가입일은 왜 어제임?'],
-          mock:['긁히는 거 보니 찔리나 보네 ㅋㅋ','캡처 완료. 알바 맞네','반응 속도 보소. 대기 타고 있었냐?'],
-          divert:['…내가 너무 예민했나','ㅇㅋ 그냥 우연인가 보네','하긴 요즘 다 말투 비슷하지'],
-          empathy:['말은 착하게 하네… 그래도 좀 이상함','음 일단 지켜볼게'] },
-  crowd:{ source:['오 그런 자료도 있었어?','흠 그건 몰랐네'],
-          mock:['다들 이 사람 말투 봐 ㅋㅋ','우르르 몰려와서 비웃는 건 좀;','이 댓글 캡처해서 퍼간다'],
-          divert:['ㅋㅋ 그건 그렇네','갑자기 평화롭네'],
-          empathy:['듣고 보니 그렇네','나도 생각 바뀜','추천 취소하고 감'] },
+  rough:{
+    logic:{ source:['…아 그 자료는 못 봤네. 근데 기분은 나쁨','ㅇㅋ 그건 인정. 나머지는 아님','(삭제된 댓글입니다)','링크 보니까 할 말 없네 ㅅㅂ'],
+            mock:['논리로 못 이기니까 조롱하네 ㅋㅋ 수준 봐라','반박 못 하니까 말꼬리 잡네','비꼬지 말고 근거나 가져와라 무뇌야','ㅋㅋ 할 말 없으면 그냥 조용히 있어'],
+            divert:['갑자기 딴소리? 도망치는 거 다 보임 ㅋㅋ','질문에 답이나 해 말 돌리지 말고','말 돌리기 장인 납셨네'],
+            empathy:['감성팔이 ㄴㄴ 숫자 가져와','공감은 됐고 근거 없으면 닥쳐','ㅋㅋㅋ 이 화법 회사 홍보팀 그대로네','"이해해요~" 이거 알바 매뉴얼 1페이지임'] },
+    anger:{ source:['누가 출처 달래? ㅅㅂ 태도가 문제라고','표 복붙하는 거 보니 알바 맞네 ㅋㅋㅋ','출처 들이밀면 다냐? 더 빡치네 진짜','니 출처 다 회사 보도자료잖아 ㅋㅋ'],
+            mock:['아 ㅅㅂ 됐다 내가 여기서 뭘 하냐','너 같은 거랑 싸우는 내가 바보지','(탈퇴한 사용자)','차단함 ㅅㄱ'],
+            divert:['지금 그 얘기가 나오냐? 미쳤냐','말 돌리지 마 아직 안 끝났다','ㅋㅋ 도망가는 거 봐라'],
+            empathy:['…그렇게 말하니까 좀 누그러지긴 하네. 그래도 빡침','착한 척 오지네. 근데 반은 맞는 말임','알았어. 근데 아직 열받는 건 맞음'] },
+    sus:  { source:['자료는 그럴듯한데 니 계정 가입일 어제던데? ㅋㅋ','출처 칼같이 가져오는 거 보니 더 수상함. 일반인은 이렇게 안 함','링크는 봤고 니 활동 기록도 봤다 ㅋㅋ'],
+            mock:['긁히는 거 보니 찔리나 보네 ㅋㅋㅋ','캡처 완료. 알바 맞네 시급 얼마냐','반응 속도 보소 ㅋㅋ 대기 타고 있었냐','니 말투 위에 댓글이랑 똑같음 ㅋㅋ 같은 놈이네'],
+            divert:['…내가 너무 예민했나','ㅇㅋ 그냥 우연인가 보네. 근데 지켜본다','하긴 요즘 다 말투 비슷하지','아 됐다 알바 찾기도 지친다'],
+            empathy:['말은 착하게 하네… 그게 더 수상함','이 친절함 어디서 많이 봤는데? 고객센터?','음 일단 지켜본다'] },
+    crowd:{ source:['오 그런 자료도 있었어?','흠 그건 몰랐네. 근데 아직 아닌 듯','ㅇㅋ 반박 자료 나오면 다시 봄'],
+            mock:['ㅋㅋㅋ 다들 이 사람 말투 봐라','우르르 몰려와서 조롱하는 거 보니 답 나왔네','이 댓글 캡처해서 퍼감 ㅋㅋ 박제','와 진짜 인성 봐라'],
+            divert:['ㅋㅋ 그건 그렇네','갑자기 분위기 저녁 메뉴','말 돌리는 거 보니 할 말 없나 봄'],
+            empathy:['듣고 보니 그렇네','음… 나 생각 바뀜','추천 취소하고 감','ㅇㅈ 내가 너무 휩쓸렸나'] },
+  },
+  polite:{
+    logic:{ source:['아 그런 자료가 있었군요. 제가 잘못 알았네요','확인해 보니 맞네요. 글 고칠게요','(작성자에 의해 삭제된 댓글입니다)'],
+            mock:['비꼬지 마시고 근거를 주세요^^','말씀이 좀 지나치시네요. 근거는요?','논리로 안 되니까 조롱하시네요 ㅎㅎ'],
+            divert:['질문에는 답을 안 하시네요','갑자기 다른 얘기를 하시네요^^','말 돌리지 마시고요'],
+            empathy:['공감은 감사한데 근거를 달라고요','회사 고객센터 답변이랑 토씨 하나 안 틀리네요ㅎㅎ','이런 말투 어디서 많이 봤는데… 혹시 관계자세요?'] },
+    anger:{ source:['지금 자료 들이밀 상황이에요? 어이가 없네요','출처 복붙하시는 거 보니 관계자 맞으시네요^^','네~ 알바님 수고 많으세요^^'],
+            mock:['…말이 안 통하네요. 그만할게요','이런 분들 때문에 댓글을 안 달게 돼요','(작성자에 의해 삭제된 댓글입니다)'],
+            divert:['지금 그 얘기가 나와요?','화제 돌리지 마세요','하… 진짜 대단하시네요'],
+            empathy:['…그렇게 말씀하시니 조금 진정은 되네요','알겠어요. 그래도 화나는 건 화나는 거예요','좋게 말씀하시니 할 말이 없네요'] },
+    sus:  { source:['자료는 잘 찾으시네요. 그런데 가입하신 지 하루 되셨던데요?','출처가 바로바로 나오는 거 보니 준비하셨나 봐요?','링크 감사해요. 근데 프로필은 왜 비어 있어요?'],
+            mock:['찔리시나 봐요 ㅎㅎ','캡처해 둘게요^^','이분 다른 댓글들도 다 같은 말투네요ㅋㅋ','네~ 알바님 오늘도 수고하세요^^'],
+            divert:['제가 너무 예민했나 봐요','아 그냥 우연이었나 보네요','요즘 다들 말투가 비슷하긴 하죠'],
+            empathy:['말씀은 친절하신데… 좀 이상해요','친절하신 게 더 의심스러워요ㅎㅎ','일단 지켜볼게요'] },
+    crowd:{ source:['오 그런 자료도 있었네요','흠 그건 몰랐어요','다른 분들 의견도 들어봐야겠어요'],
+            mock:['말씀을 왜 그렇게 하세요?','이 댓글 캡처해서 맘카페에 올릴게요','와… 인성 보고 갑니다'],
+            divert:['ㅎㅎ 그건 그렇네요','갑자기 분위기가…','그 얘기는 왜…'],
+            empathy:['듣고 보니 그러네요','저도 생각이 좀 바뀌었어요','공감 취소하고 갈게요'] },
+  },
 };
 /* 두 번 버티다 결국 물러날 때 */
-const GIVEUP = { logic:['…알겠어 내가 졌다','(삭제된 댓글입니다)'], anger:['아 됐다 그만할래','(탈퇴한 사용자)'], sus:['ㅇㅋ 내가 예민했나 봄','일단 넘어간다'], crowd:['음 듣고 보니 그렇네','그냥 갈게'] };
+const GIVEUP = {
+  rough:{ logic:['아 됐다 말이 안 통함','(삭제된 댓글입니다)','ㅇㅇ 니 말이 다 맞다 행복해라'], anger:['ㅅㅂ 됐다 그만할래','(탈퇴한 사용자)','차단 박고 간다'], sus:['ㅇㅋ 내가 예민했나 봄. 근데 닉 기억함','알바 찾다 내 인생 날리겠네 간다'], crowd:['음 듣고 보니 그렇네','난 빠질게','몰라 피곤해 ㅂㅂ'] },
+  polite:{ logic:['더 말해봐야 소용없겠네요','(작성자에 의해 삭제된 댓글입니다)'], anger:['네~ 그렇게 사세요^^','차단할게요'], sus:['제가 오해했나 보네요. 근데 기억할게요','그냥 넘어갈게요'], crowd:['음 그렇군요','저는 빠질게요'] },
+};
+/* 역효과가 나면 구경꾼이 몰려옴 (조리돌림) */
+const PILEON = {
+  rough:['ㅋㅋㅋㅋ 위에 알바 긁힌 거 봄?','박제 완료 ㅋㅋ 시급 얼마 받냐','여기 알바 출몰 ㅋㅋㅋ 다들 와서 구경해','방금 그 댓글 캡처 돌고 있음 ㅋㅋ'],
+  polite:['위에 댓글 보셨어요? 관계자 같아요','다들 위에 댓글 캡처해 두세요','알바 의심 댓글 신고했어요','이 댓글 다른 카페에도 올라갔네요'],
+};
+/* 분노형 댓글에 섞이는 거친 공용 문장 */
+const ANGER_EXTRA = {
+  rough:['진짜 ㅈㄴ 어이없네','이걸 쉴드 치는 놈들은 뭐냐 ㅋㅋ','다 꺼져라 진짜','보다 보다 이건 아니다 ㅅㅂ'],
+  polite:['어이가 없어서 웃음만 나오네요','이걸 감싸는 분들이 더 신기해요','진짜 정 떨어지네요'],
+};
+/* 의심형 댓글에 섞이는 공용 문장 */
+const SUS_EXTRA = {
+  rough:['알바 시급 얼마냐 ㅋㅋ','회사 계정으로 로그인 잘못한 거 아님?','어제 가입한 계정들 단체로 출근했네 ㅋㅋ'],
+  polite:['혹시 관계자분들이세요?','이 계정들 다 오늘 처음 글 쓰셨네요'],
+};
 
 /* ---------- 부계정 말투 ---------- */
 const PERSONAS = [
@@ -1058,17 +1097,18 @@ function mkAcc(i){ const p = PERSONAS[i % PERSONAS.length]; return {...p, nick: 
 function makeBags(){
   const d = ROUNDS[S.r];
   const fill = t => t.replace(/\{(\w)\}/g,(m,k)=>d[k] ?? m);
-  const sk = SKINS[d.skin];
+  const sk = SKINS[d.skin], tone = sk.tone || 'rough';
   const foe = {};
   for (const k in FOE_LINES){
-    const base = k === 'sus' ? (sk.foe?.sus || FOE_LINES.sus).concat(d.foes?.sus||[], d.foes?.sus||[]) : (d.foes?.[k] || sk.foe?.[k] || FOE_LINES[k]);
+    let base = k === 'sus' ? (sk.foe?.sus || FOE_LINES.sus).concat(d.foes?.sus||[], d.foes?.sus||[], SUS_EXTRA[tone]) : (d.foes?.[k] || sk.foe?.[k] || FOE_LINES[k]);
+    if (k === 'anger') base = base.concat(ANGER_EXTRA[tone]);
     foe[k] = new Bag(base.map(fill));
   }
   const my = {};
   for (const k in MY_LINES) my[k] = new Bag((k === 'divert' ? (sk.my?.divert || MY_LINES.divert) : (d.lines?.[k] || sk.my?.[k] || MY_LINES[k])).map(fill));
   const rep = {}, give = {};
-  for (const ty in REPLY){ rep[ty] = {}; for (const t in REPLY[ty]) rep[ty][t] = new Bag(REPLY[ty][t]); give[ty] = new Bag(GIVEUP[ty]); }
-  rep.give = give;
+  for (const ty in REPLY[tone]){ rep[ty] = {}; for (const t in REPLY[tone][ty]) rep[ty][t] = new Bag(REPLY[tone][ty][t]); give[ty] = new Bag(GIVEUP[tone][ty]); }
+  rep.give = give; rep.pile = new Bag(PILEON[tone]);
   B = {foe, my, rep, events:new Bag(EVENTS.concat(d.events||[], d.events||[])), nicks:new Bag(FOE_NICKS.concat(d.extraNicks||[]))};
 }
 const users = () => Math.max(3, Math.round(2417 * Math.pow(0.96, S.st.actions)));
@@ -1085,7 +1125,7 @@ const ladder = () => `<div class="ladder">${ROUNDS.map((d,i)=>`<div class="${i<S
 function screenTitle(){
   FRIEND = rollFriend();
   $('#app').innerHTML = `
-  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.8</span></div>
+  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.8.1</span></div>
   <div class="body stack">
     <h1>키보드<br>하이랜더</h1>
     <canvas class="sprite" id="hero" aria-label="모니터 앞에 앉은 알바생 도트 그림"></canvas>
@@ -1182,15 +1222,15 @@ function startRound(){
   autoAcc(); hud();
 }
 
-function spawnFoe(){
+function spawnFoe(forceType, forceText){
   const d = ROUNDS[S.r];
   if (S.open.length >= BAL.maxOpen) return;
   const pool = []; for (const k in d.types) for (let i=0;i<d.types[k];i++) pool.push(k);
-  const type = pick(pool);
+  const type = forceType || pick(pool);
   const f = {id:++S.fid, type, hp:2, nick:(SK().foeNick && SK().foeNick()) || B.nicks.next()};
   const el = document.createElement('div');
   el.className = 'c foe open'; el.tabIndex = 0; el.setAttribute('role','button');
-  el.innerHTML = `<img alt="" src="${avatar(f.nick,'foe')}"><div class="x"><div class="n">${nickHtml(f.nick)} <span class="tag">${FT[type].icon} ${FT[type].name}</span> <span class="hp"></span></div><div class="t">${esc(B.foe[type].next())}</div><div class="meta">${SK().meta('foe')}</div><div class="replies"></div></div>`;
+  el.innerHTML = `<img alt="" src="${avatar(f.nick,'foe')}"><div class="x"><div class="n">${nickHtml(f.nick)} <span class="tag">${FT[type].icon} ${FT[type].name}</span> <span class="hp"></span></div><div class="t">${esc(forceText || B.foe[type].next())}</div><div class="meta">${SK().meta('foe')}</div><div class="replies"></div></div>`;
   el.onclick = () => select(f.id);
   el.onkeydown = e => { if (e.key==='Enter' || e.key===' '){ e.preventDefault(); select(f.id); } };
   f.el = el; S.open.push(f); drawHp(f);
@@ -1265,6 +1305,7 @@ function reply(t){
   if (m === 0){
     S.op -= 4; S.sus += T.sus + 6; S.st.back++;
     addReply(f, f.nick, B.rep[f.type][t].next(), 'foe');
+    if (Math.random() < .5) spawnFoe('crowd', B.rep.pile.next());
     line('sys', `역효과! ${FT[f.type].name}한테 ${T.name}은 안 먹힌다.`);
   } else {
     f.hp -= m; S.op += T.op * (m === 2 ? BAL.strongMul : 1); S.sus += T.sus + S.r * BAL.susPerStage;
