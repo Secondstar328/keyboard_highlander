@@ -1,0 +1,998 @@
+<title>키보드 워리어</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=JetBrains+Mono:wght@400;700&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Gothic+Coding:wght@400;700&family=Press+Start+2P&display=swap">
+<style>
+/* Layout: 내 작업대 = 마크다운 에디터(탭·줄번호·프론트매터). 그 사이에 끼는 게시판 창만 의뢰별 플랫폼 스킨. */
+:root{
+  --bg:#1b1b1f; --pane:#232328; --tab:#17171b; --line:#34343b; --ink:#dcdde2; --dim:#868995; --head:#f3f4f8;
+  --acc:#a58bff; --str:#e6b673; --key:#7fd1b9; --warn:#f2777a; --ok:#9fd38a; --cm:#6f8f6c;
+  --hi:var(--acc); --foe:#7fb7ff; --cash:var(--str);
+  --f-title:"Black Han Sans","Nanum Gothic Coding",sans-serif;
+  --f-body:"JetBrains Mono","Nanum Gothic Coding",ui-monospace,monospace;
+  --f-num:"JetBrains Mono","Nanum Gothic Coding",ui-monospace,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+*{box-sizing:border-box}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+
+/* 에디터 창 */
+.win{background:var(--pane);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.win>.bar{background:var(--tab);display:flex;align-items:stretch;font-size:12px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.win>.bar>span{padding:6px 12px;color:var(--dim)}
+.win>.bar>span:first-child{background:var(--pane);color:var(--ink);border-top:2px solid var(--acc)}
+.win>.bar>span:first-child::before{content:"📄 "}
+.win>.bar>span:first-child::after{content:"  ×";color:var(--dim)}
+.win>.bar>span:last-child:not(:first-child){margin-left:auto}
+.win>.bar>span.ghost{margin-left:0!important;background:transparent;border-top:2px solid transparent}
+.win>.bar>span.ghost::before{content:"📄 "}
+.win>.body{position:relative;padding:16px 16px 16px 54px;min-width:0}
+.win>.body::before{content:"1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9\A 10\A 11\A 12\A 13\A 14\A 15\A 16\A 17\A 18\A 19\A 20\A 21\A 22\A 23\A 24\A 25\A 26\A 27\A 28\A 29\A 30\A 31\A 32\A 33\A 34\A 35\A 36\A 37\A 38\A 39\A 40\A 41\A 42\A 43\A 44\A 45\A 46\A 47\A 48\A 49\A 50\A 51\A 52\A 53\A 54\A 55\A 56\A 57\A 58\A 59\A 60\A 61\A 62\A 63\A 64\A 65\A 66\A 67\A 68\A 69\A 70\A 71\A 72\A 73\A 74\A 75\A 76\A 77\A 78\A 79\A 80\A 81\A 82\A 83\A 84\A 85\A 86\A 87\A 88\A 89\A 90\A 91\A 92\A 93\A 94\A 95\A 96\A 97\A 98\A 99\A 100\A 101\A 102\A 103\A 104\A 105\A 106\A 107\A 108\A 109\A 110\A 111\A 112\A 113\A 114\A 115\A 116\A 117\A 118\A 119\A 120";white-space:pre;position:absolute;left:0;top:16px;bottom:0;width:40px;overflow:hidden;
+  text-align:right;padding-right:10px;color:#4a4c55;font-size:12px;line-height:1.98;border-right:1px solid var(--line);pointer-events:none}
+
+/* 마크다운 미리보기 문법 */
+h1{font-family:var(--f-title);font-weight:400;font-size:clamp(38px,10vw,58px);line-height:1.05;margin:0;color:var(--head)}
+h1::before{content:"# ";color:var(--dim);font-family:var(--f-body);font-size:.5em;vertical-align:middle}
+h2{font-weight:700;font-size:20px;margin:0;color:var(--head);text-wrap:balance}
+h2::before{content:"## ";color:var(--dim)}
+h3{font-weight:700;font-size:14px;margin:6px 0 0;color:var(--head)}
+h3::before{content:"### ";color:var(--dim)}
+p{margin:0}
+b{color:var(--head)}
+.dim,.cmt{color:var(--dim)}
+.cmt{color:var(--cm)}
+.num{font-family:var(--f-num);font-size:12px;font-variant-numeric:tabular-nums;color:var(--str)}
+.key{color:var(--key)}
+.str{color:var(--str)}
+code,.code{font-family:var(--f-body);background:#ffffff0d;padding:0 4px;border-radius:3px}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{background:transparent;color:var(--acc);border:1px solid var(--acc);border-radius:4px;font-weight:700;padding:8px 14px;font-size:14px}
+.btn::before{content:"▶ "}
+.btn:hover{background:var(--acc);color:var(--bg)}
+.btn.alt{color:var(--dim);border-color:var(--line)}
+.btn.alt::before{content:"? "}
+.btn.alt:hover{background:var(--line);color:var(--ink)}
+button:focus-visible,.c.foe.open:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;border:1px solid var(--line);background:#2b2b32;padding:8px}
+
+/* 콜아웃 (> [!note]) */
+.memo{border-left:3px solid var(--acc);background:#a58bff12;border-radius:0 4px 4px 0;padding:10px 14px;display:flex;flex-direction:column;gap:4px}
+.memo .k{font-size:12px;color:var(--acc);font-weight:700}
+.memo .k::before{content:"ⓘ "}
+.big{font-size:15px;font-weight:700;color:var(--head)}
+
+/* 의뢰인 사다리 */
+.ladder{display:flex;flex-wrap:wrap;gap:4px;font-size:12px;align-items:center}
+.ladder div{padding:1px 6px;border-radius:3px;background:#ffffff0d;color:var(--dim)}
+.ladder div:not(:last-child)::after{content:" →";color:#4a4c55}
+.ladder .done{color:var(--ok);text-decoration:line-through}
+.ladder .now{background:var(--acc);color:var(--bg);font-weight:700}
+
+/* 프론트매터 HUD */
+.fm{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0 18px;font-size:13px}
+.fm .cm{grid-column:1/-1;color:var(--dim)}
+.prog{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px}
+.prog>span:first-child{min-width:7.5em;color:var(--key)}
+.prog code{color:var(--str);letter-spacing:-1px;white-space:pre;background:none;padding:0}
+.prog code.w{color:var(--warn)}
+.buffs{display:flex;gap:6px;flex-wrap:wrap;font-size:12px}
+.buffs span{background:#ffffff0d;padding:0 6px;border-radius:3px}
+.cash{color:var(--str)!important}
+
+/* 조작 패널 */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:transparent;border:1px solid var(--line);border-radius:4px;padding:3px 8px;font-size:12px;display:flex;gap:6px;align-items:center;color:var(--ink)}
+.chip img{width:16px;height:16px;image-rendering:pixelated}
+.chip.on{border-color:var(--acc);color:var(--acc);background:#a58bff14}
+.chip small{color:var(--key);font-size:11px}
+.chip .hot{color:var(--warn)}
+.acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2px 12px}
+.act{background:transparent;border:0;border-radius:3px;padding:4px 6px;text-align:left;display:flex;flex-direction:column;gap:0;color:var(--ink)}
+.act:hover:not(:disabled){background:#ffffff0a}
+.act b{font-size:13px;font-weight:400;color:var(--ink)}
+.act b::before{content:"- [ ] ";color:var(--dim)}
+.act span{font-size:11px;color:var(--cm);padding-left:6ch}
+.act .cost{color:var(--str)}
+.act:disabled{opacity:.4;cursor:not-allowed}
+.act.locked b{color:var(--dim)}
+.act.good b{color:var(--ok)}
+.act.good b::before{content:"- [x] ";color:var(--ok)}
+#tgt{font-size:13px;min-height:1.5em}
+.status{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--dim);background:var(--tab);padding:3px 10px;border:1px solid var(--line);border-radius:6px}
+.status .br{color:var(--acc)}
+
+.unlock{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.unlock div{border:1px solid var(--line);border-radius:4px;padding:8px 10px;display:flex;flex-direction:column}
+.unlock span{font-size:12px;color:var(--cm)}
+.unlock span.cash::before{content:"cost: "}
+.legend{display:flex;flex-direction:column;gap:2px;font-size:13px}
+.legend span::before{content:"- ";color:var(--dim)}
+.overlay{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;z-index:20;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.overlay .win{max-width:520px;width:100%;box-shadow:0 10px 40px #000}
+.line{opacity:0;animation:fadein .6s forwards}
+@keyframes fadein{to{opacity:1}}
+.ending p{font-size:15px}
+.ending p::before{content:"> ";color:var(--dim)}
+.ending .final{font-family:var(--f-title);font-size:24px;color:var(--head)}
+.ending .final::before{content:""}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:13px}
+.stats .dim::before{content:"| "}
+
+/* 게시판 공통 */
+.c{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;animation:pop .25s steps(3);padding:4px;border:2px solid transparent}
+.c img{width:28px;height:28px;image-rendering:pixelated}
+.c .n{font-size:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.c.foe.open{cursor:pointer}
+.c.foe.done>.x>.t{text-decoration:line-through;opacity:.55}
+.c.sys,.c.evt,.c.buy{grid-template-columns:1fr;padding:6px 8px;border-left:4px solid #e0464f;font-size:13px}
+.c.evt{border-left-color:#f5a500}
+.c.buy{border-left-color:#2e9e5b}
+.c .x{min-width:0;overflow-wrap:anywhere}
+.tag{font-size:11px;padding:0 5px}
+.replies{display:flex;flex-direction:column;gap:4px;margin-top:4px;padding-left:10px;border-left:2px solid}
+.replies .c{grid-template-columns:20px 1fr;padding:0;border:0}
+.replies .c img{width:20px;height:20px}
+.feed{height:min(40vh,340px);overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}}
+.shake{animation:shake .3s steps(4)}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+@media (max-width:420px){.win>.body{padding-left:16px}.win>.body::before{display:none}.act span{padding-left:0}}
+
+/* 플랫폼 스킨: 게시판 창만 의뢰마다 바뀜 (내 작업대는 마크다운 에디터 그대로) */
+.board{--b-bg:#fff;--b-ink:#222;--b-dim:#777;--b-line:#e3e3e3;--b-top:#333;--b-topink:#fff;--b-acc:#3b4890;--b-me:#c2410c;--b-foe:#1d4ed8;--b-card:#f6f7f9;--b-sel:#fff6cc;
+  --b-font:"Nanum Gothic","Apple SD Gothic Neo",sans-serif;
+  background:var(--b-bg);color:var(--b-ink);font-family:var(--b-font);font-size:14px;line-height:1.55;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.board .addr{background:#d6d6d6;color:#333;display:flex;gap:10px;align-items:center;padding:4px 8px;font-size:12px;font-family:var(--f-body)}
+.board .addr .u{background:#fff;border:1px solid #999;padding:1px 8px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .addr .dots{color:#e0464f;letter-spacing:2px}
+.b-top{background:var(--b-top);color:var(--b-topink);padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:13px}
+.b-top .logo{font-size:19px;font-weight:800;letter-spacing:-.5px}
+.b-post{padding:12px;border-bottom:1px solid var(--b-line);display:flex;flex-direction:column;gap:4px}
+.b-post .t{font-weight:800;font-size:17px;line-height:1.4;text-wrap:balance}
+.board .m{font-size:12px;color:var(--b-dim)}
+.b-cmt{padding:8px 12px;font-size:13px;border-bottom:1px solid var(--b-line);display:flex;gap:6px;flex-wrap:wrap}
+.b-cmt .hint{color:var(--b-dim);margin-left:auto}
+.board .feed{padding:8px 12px}
+.board b{color:inherit}
+.board .c .n{color:var(--b-dim);font-weight:700}
+.board .c.me .n{color:var(--b-me)}
+.board .c.foe .n{color:var(--b-foe)}
+.board .c .meta{font-size:11px;color:var(--b-dim);margin-top:2px}
+.board .c.foe.open{background:var(--b-card)}
+.board .c.foe.open:hover{border-color:var(--b-line)}
+.board .c.foe.sel{border-color:var(--b-acc);background:var(--b-sel)}
+.board .tag{background:var(--b-ink);color:var(--b-bg)}
+.board .hp{color:#e0464f}
+.board .replies{border-left-color:var(--b-line)}
+.board .c.sys,.board .c.evt,.board .c.buy{background:var(--b-card);color:var(--b-ink)}
+.board .c img{border:0}
+.board .thumb{image-rendering:pixelated;display:block;height:auto;max-width:100%}
+.board .star{color:#ff9f0a}
+
+.skin-gall{--b-top:#3b4890;--b-acc:#3b4890;--b-me:#3b4890;--b-foe:#555;--b-card:#fafafa;--b-line:#ddd;font-size:13px}
+.skin-gall .b-post{border-top:2px solid #3b4890}
+.skin-gall .b-cmt b{color:#d31900}
+.skin-gall .c{grid-template-columns:1fr;border-bottom:1px solid var(--b-line)}
+.skin-gall .c>img,.skin-gall .replies .c>img{display:none}
+.skin-gall .replies .c{grid-template-columns:1fr}
+
+.skin-forum{--b-bg:#14171f;--b-ink:#e8eaf0;--b-dim:#8a90a2;--b-line:#2a2f3c;--b-top:#1d212b;--b-topink:#fff;--b-acc:#ff8a00;--b-me:#ffb547;--b-foe:#7aa7ff;--b-card:#1b1f29;--b-sel:#2b2416}
+.skin-forum .logo{color:#ff8a00}
+.skin-forum .badge{align-self:flex-start;background:#ff3b30;color:#fff;font-size:11px;padding:1px 6px;font-weight:700}
+.skin-forum .c{border-radius:6px}
+
+.skin-blog{--b-top:#fff;--b-topink:#222;--b-acc:#19c45c;--b-me:#0f9d48;--b-foe:#555;--b-card:#f7faf8;--b-sel:#e8fbef}
+.skin-blog .b-top{border-bottom:1px solid var(--b-line)}
+.skin-blog .logo{color:#19c45c}
+.skin-blog .b-post .t{font-size:21px;font-weight:400}
+.skin-blog .b-post .thumb{width:auto;height:110px;margin:6px auto;background:#fff3e0;padding:8px 16px}
+.skin-blog .c img{border-radius:50%}
+
+.skin-map{--b-top:#ffe300;--b-topink:#111;--b-acc:#f5a500;--b-me:#b45309;--b-foe:#222;--b-card:#fff;--b-sel:#fff8cc}
+.skin-map .search{background:#fff;padding:3px 12px;border-radius:999px}
+.b-place{display:flex;gap:12px;padding:12px;border-bottom:8px solid #f2f2f2;align-items:center}
+.b-place .thumb{width:76px;flex:none;border-radius:6px}
+.b-place .pn{font-size:18px}
+.skin-map .rate{font-size:15px;font-weight:800}
+.skin-map .c{border-bottom:1px solid var(--b-line)}
+.skin-map .c img{border-radius:50%}
+
+.skin-video{--b-top:#fff;--b-topink:#111;--b-acc:#ff0033;--b-me:#cc0029;--b-foe:#111;--b-card:#f2f2f2;--b-sel:#ffecef}
+.skin-video .play{background:#ff0033;color:#fff;padding:0 7px;border-radius:7px;font-size:13px}
+.player{background:#000;height:180px;display:flex;align-items:center;justify-content:center;position:relative}
+.player .thumb{height:70%;width:auto}
+.player .dur{position:absolute;right:8px;bottom:8px;background:#000c;color:#fff;font-size:11px;padding:1px 4px}
+.skin-video .c img{border-radius:50%}
+
+.skin-news{--b-bg:#f4f5f7;--b-top:#1e3a8a;--b-acc:#1e3a8a;--b-me:#1e3a8a;--b-foe:#333;--b-card:#fff;--b-sel:#e6edff}
+.skin-news .kicker{font-size:12px;color:#1e3a8a;font-weight:800}
+.skin-news .b-post{background:#fff}
+.skin-news .c{background:#fff;border:1px solid var(--b-line)}
+.skin-news .up{color:#d0021b}
+.skin-news .down{color:#4a6ee0}
+
+.skin-sns{--b-bg:#000;--b-ink:#e7e9ea;--b-dim:#71767b;--b-line:#2f3336;--b-top:#000;--b-topink:#e7e9ea;--b-acc:#2fbf9f;--b-me:#2fbf9f;--b-foe:#e7e9ea;--b-card:#0b0b0b;--b-sel:#0e2a24}
+.skin-sns .b-top{border-bottom:1px solid var(--b-line)}
+.skin-sns .logo{color:#2fbf9f}
+.skin-sns .trend{font-size:12px;color:#2fbf9f}
+.b-post.sns{flex-direction:row;gap:10px}
+.b-post.sns img{width:40px;height:40px;border-radius:50%;image-rendering:pixelated;flex:none}
+.skin-sns .c{border-bottom:1px solid var(--b-line)}
+.skin-sns .c img{border-radius:50%}
+/* 선택지: 머지 컨플릭트 */
+.overlay.dil{background:#0a0a0ce6;animation:dimin .25s ease-out}
+@keyframes dimin{from{opacity:0}}
+.conflict{width:100%;max-width:640px;max-height:100%;overflow-y:auto;background:var(--pane);border:1px solid var(--warn);border-radius:8px;
+  box-shadow:0 0 0 4px #f2777a22,0 20px 60px #000;animation:glitch .45s steps(5)}
+@keyframes glitch{0%{transform:translate(0,12px);opacity:0}20%{transform:translate(-6px,0);opacity:1}40%{transform:translate(5px,0)}60%{transform:translate(-3px,0)}80%{transform:translate(2px,0)}100%{transform:none}}
+.cbar{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 14px;font-size:12px;font-weight:700;
+  background:repeating-linear-gradient(-45deg,#f2777a 0 12px,#d85c60 12px 24px);color:#1b1b1f}
+.cbody{padding:18px;display:flex;flex-direction:column;gap:16px}
+.dm{display:flex;gap:12px;align-items:flex-start}
+.dm img{width:40px;height:40px;image-rendering:pixelated;border-radius:6px;flex:none}
+.dm>div{background:#ffffff0d;border-radius:4px 14px 14px 14px;padding:10px 14px;min-width:0}
+.dm .from{font-size:12px;color:var(--dim)}
+.dm p{font-size:17px;font-weight:700;color:var(--head);line-height:1.5;text-wrap:pretty}
+.choices{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}
+.sep{align-self:center;color:var(--dim);font-size:12px;writing-mode:vertical-rl;letter-spacing:2px}
+.choice{display:flex;flex-direction:column;gap:8px;text-align:left;padding:14px;border-radius:6px;border:1px solid;background:transparent;color:var(--ink);transition:transform .12s,box-shadow .12s}
+.choice.cross{border-color:#f2777a88;background:#f2777a14}
+.choice.keep{border-color:#9fd38a88;background:#9fd38a12}
+.choice:hover,.choice:focus-visible{transform:translateY(-3px)}
+.choice.cross:hover,.choice.cross:focus-visible{box-shadow:0 6px 0 #f2777a;background:#f2777a26}
+.choice.keep:hover,.choice.keep:focus-visible{box-shadow:0 6px 0 #9fd38a;background:#9fd38a22}
+.choice .mk{font-size:11px;font-weight:700}
+.choice.cross .mk,.choice.cross .go{color:var(--warn)}
+.choice.keep .mk,.choice.keep .go{color:var(--ok)}
+.choice .lb{font-family:var(--f-title);font-size:24px;line-height:1.2;color:var(--head)}
+.choice ul{margin:0;padding:0;list-style:none;font-size:13px;display:flex;flex-direction:column;gap:2px}
+.choice li::before{content:"  ";white-space:pre}
+.choice li.pos::before{content:"+ ";color:var(--ok)}
+.choice li.neg::before{content:"- ";color:var(--warn)}
+.choice li b{letter-spacing:1px}
+.choice li.pos b{color:var(--ok)}
+.choice li.neg b{color:var(--warn)}
+.choice li.cross{color:var(--warn);font-weight:700}
+.choice li.keep{color:var(--dim)}
+.choice .go{margin-top:auto;font-size:12px;font-weight:700}
+.karma{font-size:12px;color:var(--cm)}
+.karma b{color:var(--warn)}
+@media (max-width:520px){.choices{grid-template-columns:1fr}.sep{writing-mode:horizontal-tb;text-align:center}.choice .lb{font-size:20px}}
+/* 대응·도구 타일 */
+.hrow{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.hrow .cmt{font-size:11px}
+.tgt{font-size:13px;padding:8px 12px;border-radius:6px;border:1px dashed var(--line);color:var(--dim)}
+.tgt:not(.on){animation:nudge 1.6s ease-in-out infinite}
+@keyframes nudge{50%{border-color:var(--acc);color:var(--ink)}}
+.tgt.on{border:1px solid var(--acc);background:#a58bff14;color:var(--ink)}
+.tag2{font-size:11px;background:#ffffff14;padding:1px 6px;border-radius:999px}
+.tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:10px;text-align:left;
+  border:1px solid var(--line);border-radius:8px;background:#ffffff06;color:var(--ink);transition:transform .12s,border-color .12s,box-shadow .12s,background .12s}
+.tile:hover:not(:disabled){transform:translateY(-2px);border-color:var(--acc);background:#a58bff10}
+.tile:active:not(:disabled){transform:translateY(0)}
+.tile:disabled{cursor:not-allowed}
+.tile .ic{width:40px;height:40px;border-radius:8px;display:grid;place-items:center;font-size:22px;background:#a58bff1f}
+.tile.paid .ic{background:#e6b67322}
+.tile .nm{font-weight:700;font-size:13px;color:var(--head);line-height:1.3}
+.fxs{display:flex;flex-wrap:wrap;gap:4px}
+.fx{font-size:10.5px;line-height:1.6;padding:0 6px;border-radius:999px;white-space:nowrap}
+.fx1{background:#9fd38a1f;color:var(--ok)}
+.fx0{background:#f2777a1f;color:var(--warn)}
+.fx2{background:#ffffff12;color:var(--dim)}
+.price{font-size:11px;font-weight:700;color:var(--str);margin-top:auto}
+.price.free{color:var(--dim);font-weight:400}
+.tile.poor{opacity:.5}
+.tile.poor .price{color:var(--warn)}
+.tile.tac:disabled{opacity:.55}
+.tile.tac:disabled .ic{filter:grayscale(.6)}
+.badge:empty{display:none}
+.badge{position:absolute;top:-9px;right:8px;font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:999px}
+.tile.good{opacity:1!important;border-color:var(--ok);background:#9fd38a14;box-shadow:0 0 0 1px var(--ok),0 0 18px #9fd38a40}
+.tile.good .badge{background:var(--ok);color:#1b1b1f}
+.tile.good:not(:disabled){animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 1px var(--ok),0 0 26px #9fd38a70}}
+.tile.bad{border-color:#f2777a88;background:#f2777a0d}
+.tile.bad .badge{background:var(--warn);color:#1b1b1f}
+.lockrow{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--dim);border:1px dashed var(--line);border-radius:8px;padding:8px 12px}
+.lockrow .lk{color:var(--ink)}
+@media (max-width:560px){.tgrid{grid-template-columns:1fr 1fr}.ggrid{grid-template-columns:1fr 1fr}.tile .ic{width:34px;height:34px;font-size:19px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.line{opacity:1}}
+@media (max-width:420px){.hud{grid-template-columns:1fr}.ladder{grid-template-columns:repeat(4,1fr)}}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const R = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const won = n => n >= 100000000 ? `${(n/100000000).toLocaleString(undefined,{maximumFractionDigits:2})}억원` : n >= 10000 ? `${Math.round(n/10000).toLocaleString()}만원` : `${n.toLocaleString()}원`;
+
+/* 같은 문장이 한 바퀴 돌기 전엔 다시 안 나오는 주머니 */
+class Bag{
+  constructor(items){ this.src = items; this.q = []; this.last = null; }
+  next(){
+    if (!this.q.length){ this.q = shuffle(this.src.slice()); if (this.q.length>1 && this.q[this.q.length-1]===this.last) this.q.unshift(this.q.pop()); }
+    return this.last = this.q.pop();
+  }
+}
+
+/* ---------- 픽셀 아바타 ---------- */
+const avCache = {};
+function avatar(seed, side){
+  const key = seed+side; if (avCache[key]) return avCache[key];
+  let h = 0; for (const ch of seed) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+  const rnd = () => (h = (h*1103515245 + 12345) >>> 0, (h>>>16)/65536);
+  const cv = document.createElement('canvas'); cv.width = cv.height = 7;
+  const g = cv.getContext('2d');
+  const cols = side==='me' ? ['#ffd84a','#ff9f43','#ffb3c7'] : ['#62e3ff','#7d8cff','#b9f3ff'];
+  g.fillStyle = '#06106a'; g.fillRect(0,0,7,7);
+  g.fillStyle = cols[Math.floor(rnd()*3)];
+  for (let y=0;y<5;y++) for (let x=0;x<3;x++) if (rnd()>.5){ g.fillRect(1+x,1+y,1,1); g.fillRect(5-x,1+y,1,1); }
+  return avCache[key] = cv.toDataURL();
+}
+const HERO = [
+  "......hhhh..........",".....hhhhhh.........","....hhhhhhhh..kkkkkk","....hsskskss..kggggk",
+  "....hsssssss..kgyggk",".....ssmmss...kggggk","......ssss....kkkkkk","....bbbbbbbb....kk..",
+  "...bbbbbbbbbb..kkkk.","...bbbbbbbbbbsswwww.","...bb.bbbbbb........","...bb.bbbbbb........",
+  "..dddddddddddddddddd","...d..............d.",
+];
+const HERO_PAL = {h:'#2b1a0e',s:'#f2c39b',k:'#111',m:'#b4504a',g:'#62e3ff',y:'#ffd84a',b:'#7a7f99',w:'#ddd',d:'#5b3a1e'};
+function drawHero(cv){
+  cv.width = HERO[0].length; cv.height = HERO.length;
+  const g = cv.getContext('2d');
+  HERO.forEach((row,y)=>[...row].forEach((c,x)=>{ if(HERO_PAL[c]){ g.fillStyle=HERO_PAL[c]; g.fillRect(x,y,1,1);} }));
+}
+
+/* ---------- 도트 썸네일 ---------- */
+function drawPix(cv, rows, pal){
+  cv.width = rows[0].length; cv.height = rows.length;
+  const g = cv.getContext('2d');
+  rows.forEach((row,y)=>[...row].forEach((c,x)=>{ if(pal[c]){ g.fillStyle=pal[c]; g.fillRect(x,y,1,1);} }));
+}
+const PIX = {
+  plate:{rows:["................","....oooooooo....","..oooOOooOOooo..",".ooOOooOOooOOoo.",".oOOssssssssOOo.","wwwwssssssssswww",".wwwwwwwwwwwwww.","..wwwwwwwwwwww.."],
+         pal:{o:'#e0a040',O:'#b8701c',s:'#ff7b3a',w:'#e9e9e9'}},
+  shop:{rows:["aaaaaaaaaaaaaaaa","awawawawawawawaw","bbbbbbbbbbbbbbbb","bwwwbbyyyybbwwwb","bwwwbbyyyybbwwwb","bbbbbbyyyybbbbbb","bbbbbbyyyybbbbbb","gggggggggggggggg"],
+        pal:{a:'#e23b3b',w:'#fff',b:'#c9a36b',y:'#6b3f1f',g:'#666'}},
+  phone:{rows:["..kkkkkkkk..",".kssssssssk.",".ksggggggsk.","kssggggggssk","ksgggrrgggsk","ksggrrrrggsk","ksgggrrgggsk","kssggggggssk",".ksggggggsk.",".kssssssssk.","..kkkkkkkk.."],
+         pal:{k:'#111',s:'#9a9a9a',g:'#4ad3ff',r:'#ff3b3b'}},
+};
+PIX.snack = {rows:["..kkkkkkkkkk..",".kyyyyyyyyyyk.","kyyrrrrrrrryyk","kyyrwwwwwwryyk","kyyrrrrrrrryyk","kyyyyyyyyyyyyk","kyyyyyocyyyyyk","kyyyyyyyyyyyyk",".kyyyyyyyyyyk.","..kkkkkkkkkk.."],
+  pal:{k:'#7a5a00',y:'#ffd23f',r:'#e63946',w:'#fff',o:'#c68b3c',c:'#a86a2a'}};
+const pad = n => String(n).padStart(2,'0');
+
+/* ---------- 플랫폼 스킨 (전부 가상의 서비스) ---------- */
+const SKINS = {
+  gall:{name:'떡밥갤러리', place:'갤러리 커뮤니티', url:'ddeokbap.gall/board/dujjonku', cnt:'전체 댓글',
+    head:d=>`<div class="b-top"><b class="logo">떡밥갤러리</b><span>${esc(d.X)} 마이너 갤러리</span></div>
+      <div class="b-post"><div class="t">${esc(d.title)}</div><div class="m">ㅇㅇ(211.234) · 조회 ${R(800,9000).toLocaleString()} · 추천 <span id="bstat"></span></div></div>`,
+    stat:()=>Math.round(S.op*1.3), meta:()=>`11.02 ${pad(R(0,23))}:${pad(R(0,59))}`},
+  forum:{name:'겜톡', place:'게임 커뮤니티', url:'gemtalk.forum/unppal/free', cnt:'댓글',
+    head:d=>`<div class="b-top"><b class="logo">겜톡</b><span>운빨대전 자유게시판</span></div>
+      <div class="b-post"><span class="badge">🔥 이슈</span><div class="t">${esc(d.title)}</div><div class="m">무과금장인 · 조회 ${R(5000,30000).toLocaleString()} · 추천 <span id="bstat"></span></div></div>`,
+    stat:()=>Math.max(0, Math.round(420 - S.op*4)), meta:()=>`Lv.${R(1,99)} · 추천 ${R(0,50)}`},
+  blog:{name:'초록블로그', place:'블로그 댓글', url:'chorok.blog/jangbaguni/2026', cnt:'댓글', thumb:'snack',
+    head:d=>`<div class="b-top"><b class="logo">초록블로그</b><span>자취생 장바구니 일기</span></div>
+      <div class="b-post"><div class="t">${esc(d.title)}</div><div class="m">장바구니일기 · 2026. 11. 2.</div><canvas class="thumb" id="thumb" aria-label="과자 봉지 도트 그림"></canvas><div class="m">♡ 공감 <span id="bstat"></span></div></div>`,
+    stat:()=>Math.round(20 + S.op*4), meta:()=>`${R(1,59)}분 전 · 답글`},
+  map:{name:'노랑지도', place:'지도 앱 방문자 리뷰', url:'noranmap.place/chickenking-donggeul', cnt:'방문자 리뷰', thumb:'shop',
+    head:d=>`<div class="b-top"><b class="logo">노랑지도</b><span class="search">🔍 치킨킹 동글점</span></div>
+      <div class="b-place"><canvas class="thumb" id="thumb" aria-label="치킨집 도트 그림"></canvas><div><b class="pn">치킨킹 동글점</b><div class="m">치킨 · 네모시 동글동 · 점주 김순자 · 가맹 12년째</div><div class="rate" id="bstat"></div></div></div>`,
+    stat:()=>{ const v = 5 - 3.6*S.op/100, n = Math.round(v); return `<span class="star">${'★'.repeat(n)}</span>${'☆'.repeat(5-n)} ${v.toFixed(1)}`; },
+    meta:side=> side==='me' ? `<span class="star">★</span>☆☆☆☆ · 방문 1회` : `<span class="star">★★★★${Math.random()<.7?'★':'☆'}</span> · 방문 ${R(2,99)}회`},
+  video:{name:'MeTube', place:'영상 댓글창', url:'metube.video/watch?v=usim_daeran', cnt:'댓글', thumb:'phone',
+    head:d=>`<div class="b-top"><b class="logo"><span class="play">▶</span> MeTube</b><span>🔍</span></div>
+      <div class="player"><canvas class="thumb" id="thumb" aria-label="해킹 경고가 뜬 휴대폰 도트 그림"></canvas><span class="dur">12:34</span></div>
+      <div class="b-post"><div class="t">${esc(d.title)}</div><div class="m">IT리뷰어 데이브 · 조회수 <span id="bstat"></span>회</div></div>`,
+    stat:()=>(124000 + S.turn*8300).toLocaleString(), meta:()=>`👍 ${R(0,999)} · 👎 · 답글`},
+  news:{name:'네모포털', place:'포털 뉴스 댓글', url:'nemoportal.news/society/20250601', cnt:'댓글',
+    head:d=>`<div class="b-top"><b class="logo">네모포털</b><span>뉴스 · 정치</span></div>
+      <div class="b-post"><div class="kicker">사회 | 교육</div><div class="t">${esc(d.title)}</div><div class="m">네모일보 · 김기자 기자 · 입력 2026.11.02 · <span id="bstat"></span></div></div>`,
+    stat:()=>`댓글 중 ${esc(ROUNDS[S.r].S)} 우호 ${Math.round(S.op)}%`, meta:()=>`<span class="up">공감 ${R(0,999)}</span> · <span class="down">비공감 ${R(0,200)}</span>`},
+  sns:{name:'짹짹', place:'SNS 타임라인', url:'jjakjjak.sns/nemo_official/status/2026', cnt:'답글',
+    head:d=>`<div class="b-top"><b class="logo">짹짹</b><span class="trend" id="bstat"></span></div>
+      <div class="b-post sns"><img alt="" src="${avatar('네모당 공식','me')}"><div><div class="m"><b>네모당 공식</b> @nemo_official · 1시간</div><div class="t">${esc(d.title)}</div><div class="m">💬 2.1천 · 🔁 8.4천 · ♥ 3.2만</div></div></div>`,
+    stat:()=>`실시간 트렌드 #${esc(ROUNDS[S.r].X)}_역전 ${Math.max(1, Math.round(40 - S.op/2.5))}위`, meta:()=>`💬 ${R(0,40)} · 🔁 ${R(0,300)} · ♥ ${R(0,999)}`},
+};
+function abar(v, t){ const n = 20, f = Math.round(v/100*n), m = t==null ? -1 : Math.min(n-1, Math.round(t/100*n)); let o = ''; for (let i=0;i<n;i++) o += i===m ? '┃' : i<f ? '█' : '░'; return o; }
+const SK = () => SKINS[ROUNDS[S.r].skin];
+function renderBoard(d){
+  const k = SKINS[d.skin];
+  return `<div class="board skin-${d.skin}"><div class="addr"><span class="dots" aria-hidden="true">●●●</span><span class="u">🔒 ${k.url}</span></div>${k.head(d)}
+    <div class="b-cmt">${k.cnt} <b id="ccount">0</b><span class="hint">상대 댓글을 눌러 대상 선택</span></div>
+    <div class="feed" id="feed" aria-live="polite"></div></div>`;
+}
+
+/* ---------- 상대 댓글 유형 ---------- */
+const FT = {
+  logic:{icon:'🧠', name:'팩트형', drain:2},
+  anger:{icon:'🔥', name:'분노형', drain:3},
+  sus:  {icon:'🕵️', name:'의심형', drain:1},
+  crowd:{icon:'👥', name:'동조형', drain:2},
+};
+/* ---------- 내 대응법 (상성: 2=강함, 1=보통, 0=역효과) ---------- */
+const TACTICS = {
+  source: {icon:'📎', name:'출처 들이밀기', op:7, sus:4, vs:{logic:2,anger:0,sus:1,crowd:1}},
+  mock:   {icon:'😏', name:'긁기',         op:6, sus:5, vs:{logic:1,anger:2,sus:0,crowd:0}},
+  divert: {icon:'🌀', name:'물타기',       op:4, sus:0, vs:{logic:1,anger:1,sus:2,crowd:1}},
+  empathy:{icon:'🥺', name:'공감하는 척',  op:6, sus:2, vs:{logic:0,anger:1,sus:1,crowd:2}},
+};
+const typeList = t => Object.keys(FT).filter(k => TACTICS[t].vs[k]===2).map(k=>FT[k].icon).join('');
+const weakList = t => Object.keys(FT).filter(k => TACTICS[t].vs[k]===0).map(k=>FT[k].icon).join('');
+
+/* ---------- 도구: 레벨로 해금, 돈 드는 건 의뢰인 작전비에서 차감 ---------- */
+const TOOLS = [
+  {id:'post',   icon:'📝', name:'새 글 쓰기',        lv:1, cost:0,        desc:'여론 ▲ · 의심 ▲'},
+  {id:'boost',  icon:'👍', name:'추천 조작',          lv:1, cost:0,        desc:'계정 수만큼 여론 ▲ · 의심 ▲▲▲'},
+  {id:'alt',    icon:'🎭', name:'부계정 생성',        lv:1, cost:0,        desc:'새 말투 계정 +1 · 의심 ▲'},
+  {id:'lurk',   icon:'💤', name:'잠수 타기',          lv:1, cost:0,        desc:'의심 ▼▼'},
+  {id:'meme',   icon:'🖼️', name:'짤 외주',            lv:2, cost:10000,    desc:'짤 장인에게 의뢰 · 여론 ▲ · 의심 조금'},
+  {id:'macro',  icon:'🤖', name:'매크로 돌리기',      lv:2, cost:30000,    desc:'추천 폭격 · 여론 ▲▲ · 의심 ▲▲▲▲'},
+  {id:'youtube',icon:'📹', name:'유튜버 바이럴 영상', lv:3, cost:100000,   desc:'3턴 동안 여론이 계속 오름'},
+  {id:'vtuber', icon:'🎙️', name:'버튜버 광고',        lv:3, cost:200000,   desc:'팬덤 투입 · 👥동조형을 전부 우리 편으로'},
+  {id:'admin',  icon:'🔑', name:'커뮤 운영자 매수',   lv:4, cost:500000,   desc:'의심 0 · 3턴 동안 정지 면제'},
+  {id:'press',  icon:'🗞️', name:'언론사 매수',        lv:5, cost:1000000,  desc:'"단독" 기사 · 🧠팩트형 전부 제압 · 의심 ▼'},
+  {id:'bots',   icon:'🛰️', name:'해외 봇 농장',       lv:5, cost:2000000,  desc:'번역체 계정 +3 · 의심 ▲▲'},
+  {id:'poll',   icon:'📊', name:'여론조사 업체 의뢰', lv:6, cost:3000000,  desc:'"조사 결과" 발표 · 여론 ▲▲▲▲'},
+  {id:'portal', icon:'🔍', name:'포털 검색어 조작',   lv:7, cost:8000000,  desc:'상대 댓글 전부 묻힘 · 의심 ▲▲'},
+];
+
+const TOOL_FX = {
+  post:[['여론▲',1],['의심▲',0]], boost:[['여론▲×계정',1],['의심▲▲▲',0]], alt:[['계정+1',1],['의심▲',0]], lurk:[['의심▼▼',1],['1턴 쉼',2]],
+  meme:[['여론▲',1],['의심 조금',0]], macro:[['여론▲▲',1],['의심▲▲▲▲',0]], youtube:[['여론▲ ×3턴',1]], vtuber:[['👥 일괄 제압',1],['여론▲',1]],
+  admin:[['의심 0',1],['정지 면제 3턴',1]], press:[['🧠 일괄 제압',1],['의심▼',1]], bots:[['계정+3',1],['의심▲▲',0]],
+  poll:[['여론▲▲▲▲',1],['의심▲',0]], portal:[['상대 전부 묻기',1],['의심▲▲',0]],
+};
+const TAC_BG = {source:'#7fb7ff22', mock:'#f2777a22', divert:'#7fd1b922', empathy:'#e6b67322'};
+const chip = ([t,k]) => `<span class="fx fx${k}">${t}</span>`;
+
+/* ---------- 문장 틀: {X}=우리 쪽 대상, {Y}=상대 쪽 대상, {S}=우리 편 이름, {F}=상대편 이름 ---------- */
+const MY_LINES = {
+  source:['{X} 관련 논문 있음. 링크는 귀찮아서 생략','하버드에서 연구했는데 결론이 {S} 승리임','통계청 자료 보면 {X} 쪽이 압도적임 (찾아보셈)','우리 삼촌이 이 분야 전문가인데 {S} 말이 맞대','{Y} 주장은 2019년에 이미 반박됨','유튜브에 교수님이 {X} 맞다고 함','위키 보셈. 내가 어제 고쳐놨음'],
+  mock:['{F} 또 긁혔네ㅋㅋㅋ','발작 버튼 눌렸노','그래서 {Y}는 언제 이김?','3줄 요약 부탁ㅋㅋ','진지 빨지 마셈','댓글 길이가 패배 선언문임','{Y} 좋아하는 거 부모님도 아심?'],
+  divert:['근데 오늘 날씨 미쳤다','그건 그렇고 {Y} 쪽도 문제 많던데?','알바 타령 하는 사람이 알바일 확률 99%','다들 진정하고 밥이나 먹자','난 중립인데 솔직히 {S} 쪽이 낫더라','이 글 왜 자꾸 추천 1위임? 신기하네','주말에 뭐 하세요 다들'],
+  empathy:['저도 처음엔 {Y} 쪽이었는데… 생각이 바뀌더라고요','다 이해해요. 한 번만 {X} 입장에서 봐주세요','싸우지 마세요. 결국 {X}가 답인 것 같아요','저 같은 평범한 사람도 {S} 편이에요','혹시 {X} 제대로 겪어보셨어요? 저는 인생 바뀜','말씀 공감해요. 근데 그래서 {X}가 더 필요한 거 아닐까요'],
+  post:['[정보] {X}가 옳은 이유 7가지','{F} 논리 정리해봄 (웃김 주의)','솔직히 {Y} 편드는 사람 특징.jpg','오늘부터 {S} 하기로 함','[후기] {X} 일주일 해본 결과','{F}가 절대 말 안 하는 진실'],
+};
+const FOE_LINES = {
+  logic:['{X} 근거 있음? 출처 좀','통계로 보면 {Y} 쪽이 맞는데','그 주장 이미 반박된 거임','{S} 논리 구멍 세 개 찾음','그래서 증거는?'],
+  anger:['아 {S} 진짜 짜증나네','{X} 얘기만 나오면 혈압 오름','이 갤 {S} 놈들 때문에 망함','그만 좀 해라 제발','{X} 소리 한 번만 더 하면 탈갤함'],
+  sus:['오늘 가입한 계정이 왜 이렇게 많음?','말투 다 비슷한데 알바 아님?','{S} 댓글 추천 수 이상한데','이 사람 어제는 다른 닉이었음','{S} 쪽 계정들 가입일 다 같음ㅋㅋ'],
+  crowd:['ㅇㅈ 나도 {Y} 편','{F} 다들 모여라','다들 {Y}라던데','추천 누르고 감','{Y} 편 손'],
+};
+const REPLY = {
+  win:{logic:['…링크는?','아 몰라 됐어','(삭제된 댓글입니다)'],anger:['아 됐다 안 해 이 갤','(탈퇴한 사용자)','ㅂㄷㅂㄷ'],sus:['내가 예민했나…','음 아닌가 보네','ㅇㅋ 내가 오해함'],crowd:['오 듣고 보니 그렇네','나도 생각 바뀜','추천 취소함']},
+  hurt:['…그건 좀 일리 있네','그래도 아닌 건 아님','흠','말은 잘하네'],
+  back:['ㅋㅋㅋ 알바 티 남','캡처했다','이 사람 말투 봐ㅋㅋ','더 긁혀서 옴ㅋㅋ','역시 {S} 수준'],
+};
+
+/* ---------- 부계정 말투 ---------- */
+const PERSONAS = [
+  {nick:'ㅇㅇ(118.235)', tone:'음슴체', pre:['','ㄹㅇ '], suf:[' ㅇㅇ','','ㅋ']},
+  {nick:'지나가던아재', tone:'아재', pre:['허허 ','에휴 ','젊은 친구들, '], suf:['...','!!',' 허허']},
+  {nick:'순수한소비자', tone:'공손', pre:['','조심스럽게 말씀드리면 '], suf:[' ^^',' 감사합니다','']},
+  {nick:'팩트폭격기', tone:'냉소', pre:['',''], suf:['.',' 끝.',' 반박 불가.']},
+  {nick:'눈물많은감자', tone:'감성', pre:['','음… '], suf:[' ㅠㅠ',' 🥲','…']},
+  {nick:'흑염룡각성', tone:'중2병', pre:['훗, ','크큭… '], suf:[' …라고 해두지',' (오른팔이 쑤신다)','']},
+  {nick:'고양이집사3', tone:'귀염', pre:['',''], suf:[' 냥',' >_<',' 헤헤']},
+];
+const BOT_PERSONA = {nick:'Kim_Minsu', tone:'번역체', pre:['나는 생각한다, ','정말로 '], suf:[' 이것은 사실입니다.',' 좋은 하루 되세요.',' 감사합니다 친구.']};
+const BOT_NAMES = ['Kim_Minsu','Lee_Jiwoo88','Park.Seoyeon','Choi_Real_Korean','Jung_Hoon_1990','Kang_Nara77'];
+const FOE_NICKS = ['ㅇㅇ(39.7)','반박장인','팩트체커','눈팅10년차','현생사는사람','ㅇㅇ(175.223)','논리왕','깨어있음','고인물','퇴근하고싶다','ㅇㅇ(223.38)','갤고인물'];
+
+/* ---------- 의뢰 7단계: 친구 고닉 → 여당 (각 의뢰는 2025~2026년 실제 논란을 가상 이름으로 각색) ---------- */
+const ROUNDS = [
+  // 모티브: 2026년 초 '두쫀쿠'(두바이 쫀득쿠키) 유행과 49일 만의 '끝물' 논쟁, 뒤늦게 차린 자영업자들
+  { tier:'친구 고닉', skin:'gall', client:'오래 알던 고닉 「갤주」', ask:'"형, 나 두쫀쿠 가게 차렸는데 갤에 끝물이라는 글이 도배됐어ㅠ 좀만 도와줘. 두쫀쿠 쏠게"',
+    title:'[논쟁] 두쫀쿠 이제 끝물 아님? 검색량 반토막 났던데 ㅋㅋ', S:'두쫀쿠파', F:'끝물파', X:'두쫀쿠', Y:'끝물론',
+    start:36, target:58, turns:12, pay:20000, payNote:'두쫀쿠 2개', budget:0, spawn:.3, types:{logic:2,anger:3,sus:1,crowd:2},
+    extraNicks:['탕후루생존자','피스타치오러버','디저트유목민'],
+    extraFoe:{logic:['검색량 49일 만에 꺾임. 탕후루는 159일 갔는데','편의점에서 반값에 팔기 시작하면 끝난 거임'],crowd:['ㅇㅈ 다음 유행 뭐임?','두쫀쿠 이제 편의점에서 사 먹음']},
+    events:[{t:'편의점에서 반값 두쫀쿠가 출시됐다.', op:-8, sus:0},{t:'연예인이 SNS에 두쫀쿠 인증샷을 올렸다!', op:9, sus:0}],
+    win:'갤주: "형 덕분에 살았다ㅋㅋ 근데 이거 돈 받고 해주는 사람도 있더라? 소개해 줄까?"',
+    dilemma:{t:'끝물론을 퍼뜨린 고닉 「탕후루생존자」 얼굴로 합성짤을 만들면 확실히 터질 것 같다.',
+      a:{l:'합성짤 만든다', op:14, sus:12, karma:1, log:'합성짤이 개념글에 올라갔다. 「탕후루생존자」는 그날 밤 탈퇴했다.'},
+      b:{l:'그건 좀…', op:0, sus:0, karma:0, log:'당신은 포토샵을 껐다.'}} },
+  // 모티브: 2026년 확률형 아이템 '확률 편향' 인정과 이용자협회의 집단 신고, 옆 게임의 전액 환불
+  { tier:'게임회사', skin:'forum', client:'모바일 게임사 「가챠월드」', ask:'"「운빨대전」 펫 뽑기 확률 건으로 이용자협회가 집단 신고를 한답니다. 환불은 절대 안 됩니다."',
+    title:'[속보] 운빨대전 펫 뽑기 확률 편향 인정함ㅋㅋ 집단 신고 위임 받는 중', S:'운영 옹호', F:'집단신고단', X:'운영', Y:'집단 신고',
+    start:33, target:60, turns:12, pay:80000, budget:50000, spawn:.4, types:{logic:3,anger:3,sus:2,crowd:1},
+    extraNicks:['핌업','과금러300만','신고위임863호'],
+    extraFoe:{logic:['공지 확률이랑 실제 확률이 다르다고 회사가 직접 인정함','옆 겜은 똑같은 일로 전액 환불해줬는데?'],anger:['3년 한 게임인데 배신감 미쳤다'],crowd:['신고 위임 863명 돌파','피해구제센터 1호 사건 가자']},
+    events:[{t:'옆 회사가 똑같은 확률 논란에 전액 환불을 결정했다. 유저들이 비교하기 시작했다.', op:-10, sus:0},{t:'운영진이 사과문을 올렸다. 핵심 단어는 "오류"였다. 일단 화력은 조금 줄었다.', op:5, sus:0},{t:'게임위 확률형 아이템 피해구제센터가 문을 열었다.', op:-5, sus:0}],
+    win:'의뢰인: "환불 없이 넘어갔습니다. 식품 쪽에 아는 분 소개해 드릴게요."',
+    dilemma:{t:'집단 신고 총대의 예전 욕설 채팅 로그를 받았다. 퍼뜨리면 신고가 "악성 유저 선동"이 된다.',
+      a:{l:'로그를 퍼뜨린다', op:16, sus:16, karma:1, log:'총대는 사과문을 쓰고 잠적했다. 신고 위임은 멈췄다.'},
+      b:{l:'로그를 지운다', op:-5, sus:-5, karma:0, log:'당신은 파일을 휴지통에 넣었다. 휴지통은 비우지 않았다.'}} },
+  // 모티브: 2026년 설탕·밀가루·전분당 가격 담합 과징금, 그 사이 오른 빵값·과자값
+  { tier:'식품기업', skin:'blog', client:'제당 회사 「달달제당」', ask:'"담합 과징금 기사가 블로그까지 퍼졌어요. 가격은 원가 때문이라는 쪽으로 정리해 주세요."',
+    title:'빵값·과자값 왜 이렇게 올랐나 했더니… 설탕·밀가루 담합이었네요', S:'제당 옹호', F:'장바구니 소비자', X:'원가 상승', Y:'담합',
+    start:32, target:62, turns:12, pay:150000, budget:100000, spawn:.42, types:{logic:2,anger:2,sus:2,crowd:2},
+    extraNicks:['자취생','편의점알바생','동네빵집사장'],
+    extraFoe:{logic:['과징금만 조 단위인데 원가 탓은 좀…','원재료값 내렸을 때는 왜 안 내림?'],anger:['과자 한 봉지 사려다 손 떨림'],crowd:['좋은 글 공유해 갑니다','저도 영수증 비교해 봤어요']},
+    events:[{t:'공정위가 담합 조사를 다른 품목으로 넓힌다고 발표했다.', op:-9, sus:0},{t:'「달달제당」이 "국제 원당 가격 때문"이라는 보도자료를 냈다.', op:4, sus:0}],
+    win:'의뢰인: "가격은 그대로 갑니다. 치킨 쪽에서 연락 갈 거예요."',
+    dilemma:{t:'의뢰인이 넌지시 말한다. "그 블로거, 경쟁사한테 돈 받고 쓴 거라고 하면 어떨까요?"',
+      a:{l:'"경쟁사 사주설" 퍼뜨린다', op:14, sus:14, karma:1, log:'블로그에 악플이 1,000개 달렸다. 블로그는 비공개로 바뀌었다.'},
+      b:{l:'안 한다', op:-3, sus:0, karma:0, log:'의뢰인: "아 네… 다음엔 적극적인 분 찾을게요."'}} },
+  // 모티브: 2026년 육계값 하락에도 그대로인 치킨값 + 필수품목 강매로 본사를 고소한 가맹점주들
+  { tier:'프랜차이즈', skin:'map', client:'치킨 프랜차이즈 「치킨킹」 본사', ask:'"동글점 점주가 점주협의회 소송 총대예요. 가게 평점이 떨어지면 계약 해지 사유가 됩니다."',
+    title:'치킨킹 동글점 방문자 리뷰', S:'본사', F:'단골들', X:'치킨킹', Y:'동글점',
+    start:30, target:64, turns:12, pay:500000, budget:300000, spawn:.5, types:{logic:2,anger:1,sus:2,crowd:3}, fading:true,
+    extraNicks:['동네주민','12년단골','점주협의회'],
+    extraFoe:{logic:['어제도 시켰는데 맛 그대로던데요','위생 점검 A등급 받은 집이에요'],anger:['본사랑 소송한다고 이러는 거 다 알아요'],sus:['리뷰 다 같은 날 같은 말투로 올라옴…'],crowd:['12년 단골인데 무슨 소리야','사장님 혼자 새벽까지 튀기세요 그러지 마세요']},
+    events:[{t:'"육계 시세 37% 하락, 치킨값은 그대로" 기사가 떴다.', op:-8, sus:0},{t:'본사가 "배달비·인건비 때문"이라는 공지를 올렸다.', op:4, sus:0},{t:'다른 가맹점주들이 동글점 응원 리뷰를 남기기 시작했다.', op:-8, sus:4}],
+    win:'본사: "동글점 평점 2점대 진입. 계약 정리하겠습니다. 그룹 쪽에 추천해 두죠."',
+    news:{k:'한 달 뒤, 경제면', t:'「치킨킹」, 본사 상대 소송 낸 점주에 가맹 해지 통보', q:'"평점 하락에 따른 브랜드 관리 차원"이라고 본사는 밝혔다.'},
+    dilemma:{t:'점주 김순자 씨가 리뷰에 답글을 달았다. "본사랑 소송 중이라 그래요. 맛은 그대로예요. 믿어주세요."',
+      a:{l:'답글로 더 몰아붙인다', op:16, sus:6, karma:1, log:'사장님의 답글은 다시 올라오지 않았다.'},
+      b:{l:'로그아웃한다', op:-10, sus:-20, karma:0, log:'당신은 한참 화면을 보다가 노트북을 덮었다.'}} },
+  // 모티브: 2025년 통신사 유심 해킹 사태, 유심 교체 대란, 기업의 분쟁조정안 거부
+  { tier:'대기업', skin:'video', client:'「한빛텔레콤」 대외협력실', ask:'"유심 건은 이제 그만 잠잠해졌으면 합니다. 배상안은 거부할 거고요. 예산은 신경 쓰지 마세요."',
+    title:'[현장] 유심 교체 대란… 새벽 6시부터 줄 섰는데 재고 없답니다', S:'한빛 옹호', F:'피해 고객', X:'한빛텔레콤', Y:'유심 해킹',
+    start:28, target:66, turns:12, pay:3000000, budget:1500000, spawn:.5, types:{logic:3,anger:2,sus:2,crowd:2},
+    extraNicks:['IT유튜버','집단소송카페','대리점직원'],
+    extraFoe:{logic:['가입자 정보 다 털렸는데 "피해 확인 안 됨"이 말이 됨?','분쟁조정 1인 30만원 배상안을 회사가 거부함'],sus:['한빛 옹호 계정들 다 IP 같은 대역임'],anger:['번호이동 위약금이라도 면제해라']},
+    events:[{t:'분쟁조정위원회가 1인당 30만원 배상안을 냈다. 한빛텔레콤은 거부했다.', op:-12, sus:0},{t:'한빛텔레콤이 "유심보호서비스 무료 가입" 캠페인을 시작했다.', op:5, sus:0},{t:'다른 회사에서도 해킹 사고가 났다는 뉴스가 떴다. 관심이 분산됐다.', op:6, sus:0}],
+    win:'의뢰인: "번호이동이 멈췄습니다. 정치권에서도 당신 얘기를 하더군요."',
+    dilemma:{t:'집단소송을 모으는 유튜버의 과거 영상을 찾았다. "합의금 노리는 꾼"으로 몰 수 있을 것 같다.',
+      a:{l:'"합의금 꾼"으로 몬다', op:20, sus:15, karma:1, log:'유튜버는 영상을 내렸다. 유출된 정보는 그대로였다.'},
+      b:{l:'그냥 둔다', op:-6, sus:0, karma:0, log:'집단소송 참가자가 10만 명을 넘겼다.'}} },
+  // 모티브: 2025년 대선 직전 불거진 교육단체의 '댓글팀' 의혹 (강사 자격증을 미끼로 수강생 동원)
+  { tier:'야당', skin:'news', client:'동글당 지지 단체 「바른엄지 아카데미」 (비공식)', ask:'"수강생들한테 방과후 강사 자격증 준다고 했더니 다들 열심히 댓글 달아요. 팀 이름은 「엄지군」입니다. 지휘 좀 해주세요."',
+    title:'"자격증 줄 테니 댓글 달아라"… 교육단체 댓글팀 의혹', S:'동글당', F:'네모당', X:'동글당', Y:'네모당',
+    start:30, target:68, turns:12, pay:10000000, budget:5000000, spawn:.55, types:{logic:2,anger:2,sus:3,crowd:2},
+    extraNicks:['시사유튜버','학부모커뮤','네모시민'],
+    extraFoe:{sus:['이 기사 댓글 공감 수 1분 만에 3천 오른 거 뭐임?','방과후 강사들이 왜 정치 댓글을 달아요?'],logic:['단톡방 캡처 보면 "오늘의 기사 링크" 공지가 매일 올라옴'],anger:['애들 가르칠 사람들을 댓글에 동원해?']},
+    events:[{t:'탐사보도 매체가 「엄지군」 단톡방 캡처를 공개했다.', op:0, sus:16},{t:'「엄지군」 단톡방에 오늘의 기사 링크 공지가 올라왔다. 수강생 200명이 움직인다.', op:8, sus:6}],
+    win:'단체: "선거 끝났습니다. 단톡방은 폭파했어요. 아, 그리고 다른 쪽에서 연락이 갈 수도 있어요."',
+    news:{k:'석 달 뒤, 사회면', t:'「바른엄지 아카데미」 댓글팀 의혹, 교육 당국 전수조사', q:'"자격증 준다길래 시키는 대로 했어요." 한 수강생의 말.'},
+    dilemma:{t:'단체가 네모당 후보 목소리로 만든 딥페이크 음성을 보냈다. "막말 녹취록 입수"라고 올리면 된다.',
+      a:{l:'올린다', op:24, sus:22, karma:1, log:'녹취록은 조회수 200만을 찍었다. 해명 기사는 2천 명이 봤다.'},
+      b:{l:'안 올린다', op:-6, sus:0, karma:0, log:'한 시간 뒤, 다른 계정이 같은 파일을 올렸다.'}} },
+  // 모티브: 2026년 지방선거 여론조사 조작 의혹 (대포폰·안심번호로 특정 지역 응답률 부풀리기)
+  { tier:'여당', skin:'sns', client:'「네모당」 선거 캠프 (비공식)', ask:'"지난번에 동글당 일 하셨죠? 실력 봤습니다. 이번엔 우리 쪽입니다. 여론조사 쪽은 따로 준비했어요. 대포폰이랑 안심번호요."',
+    title:'D-3. 최신 여론조사에서 역전했습니다. 마지막까지 함께해 주세요 🙌 #네모당', S:'네모당', F:'동글당', X:'네모당', Y:'동글당',
+    start:30, target:70, turns:12, pay:50000000, budget:20000000, spawn:.6, types:{logic:2,anger:3,sus:3,crowd:2},
+    extraNicks:['시사유튜버','팩트체크센터','OO일보기자'],
+    extraFoe:{sus:['이 계정들 지난달엔 동글당 편이었음ㅋㅋ','그 여론조사 응답률이 왜 특정 지역만 50% 넘음?','어제 가입한 계정들이 다 같은 여론조사 이미지 올림'],logic:['그 조사 표본 수랑 조사 방법 공개 안 했던데요'],anger:['진짜 이 나라 어떻게 되려고']},
+    events:[{t:'대포폰 300대가 택배로 도착했다. 송장에는 "사무용품"이라고 적혀 있다.', op:10, sus:8},{t:'"특정 지역만 응답률 50% 넘어… 여론조사 조작 의혹" 기사가 떴다.', op:-6, sus:14}],
+    win:'캠프: "수고하셨습니다. 입금했습니다. 앞으로 우리는 서로 모르는 사이입니다."',
+    newsWin:{k:'D+1, 개표 결과', t:'네모당 후보 0.7%p 차 신승', q:'"석 달 뒤, 여론조사 조작 의혹으로 압수수색이 시작됐다. 투표율은 역대 최저였다."'},
+    newsLose:{k:'D+1, 개표 결과', t:'동글당 후보 0.7%p 차 신승', q:'"석 달 뒤, 양쪽 캠프 모두 여론 조작 의혹에 휩싸였다. 투표율은 역대 최저였다."'},
+    dilemma:{t:'캠프가 투표 전날 발표할 「자체 여론조사」를 보냈다. 표본 수가 적혀 있지 않다.',
+      a:{l:'퍼뜨린다', op:25, sus:20, karma:1, log:'"역전 확정"이 실시간 트렌드 1위에 올랐다.'},
+      b:{l:'안 퍼뜨린다', op:-6, sus:0, karma:0, log:'계정 200개가 동시에 같은 이미지를 올렸다.'}} },
+];
+
+const EVENTS = [
+  {t:'고닉 「갤주」가 우리 편을 들었다!', op:10, sus:0},
+  {t:'반박 장인 등장. 출처까지 달았다.', op:-8, sus:0},
+  {t:'누가 우리 편 댓글 말투를 비교한 캡처를 올렸다.', op:0, sus:12},
+  {t:'점심시간. 다들 밥 먹으러 갔다.', op:0, sus:-10},
+  {t:'우리 편 짤이 다른 커뮤니티로 퍼졌다.', op:8, sus:5},
+  {t:'운영자가 순찰 중이다…', op:0, sus:8},
+  {t:'다른 업체 알바가 같은 편에서 댓글을 달고 있다. 고맙긴 한데 말투가 너무 티 난다.', op:6, sus:6},
+];
+
+/* ---------- 상태 ---------- */
+let S, B;
+function newGame(){
+  S = { r:0, op:0, sus:0, money:0, budget:0, karma:0, turn:0, sel:null, acc:0, busy:false, open:[], fid:0, fails:0,
+        buffs:[], shield:0, accs:[mkAcc(0), mkAcc(1)], usedPersonas:2, botN:0,
+        st:{replies:0, strong:0, back:0, tools:0, spent:0, boosts:0, alts:2, bans:0, wins:0, actions:0} };
+}
+const level = () => S.r + 1;
+function mkAcc(i){ const p = PERSONAS[i % PERSONAS.length]; return {...p, nick: i<PERSONAS.length ? p.nick : p.nick+(i+1), used:-99}; }
+function makeBags(){
+  const d = ROUNDS[S.r];
+  const fill = t => t.replace(/\{(\w)\}/g,(m,k)=>d[k] ?? m);
+  const foe = {}; for (const k in FOE_LINES) foe[k] = new Bag(FOE_LINES[k].concat(d.extraFoe?.[k]||[], d.extraFoe?.[k]||[]).map(fill));
+  const my = {}; for (const k in MY_LINES) my[k] = new Bag(MY_LINES[k].map(fill));
+  const rep = {win:{}}; for (const k in REPLY.win) rep.win[k] = new Bag(REPLY.win[k]);
+  rep.hurt = new Bag(REPLY.hurt); rep.back = new Bag(REPLY.back.map(fill));
+  B = {foe, my, rep, events:new Bag(EVENTS.concat(d.events||[], d.events||[])), nicks:new Bag(FOE_NICKS.concat(d.extraNicks||[]))};
+}
+const users = () => Math.max(3, Math.round(2417 * Math.pow(0.96, S.st.actions)));
+const voice = (a, core) => pick(a.pre) + core + pick(a.suf);
+const ladder = () => `<div class="ladder">${ROUNDS.map((d,i)=>`<div class="${i<S.r?'done':i===S.r?'now':''}">${esc(d.tier)}</div>`).join('')}</div>`;
+
+/* ---------- 화면: 타이틀 ---------- */
+function screenTitle(){
+  $('#app').innerHTML = `
+  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.6.2</span></div>
+  <div class="body stack">
+    <h1>키보드<br>워리어</h1>
+    <canvas class="sprite" id="hero" aria-label="모니터 앞에 앉은 알바생 도트 그림"></canvas>
+    <p>시급 9,860원짜리 인생에 지친 당신. 오래 알던 고닉에게서 DM이 왔다.</p>
+    <div class="memo"><span class="k">갤주의 DM</span>
+      <span class="big">"형, 댓글 좀 같이 달아줄 수 있어? 두쫀쿠 쏠게"</span></div>
+    <div class="row"><button class="btn" id="go">DM 답장하기</button><button class="btn alt" id="how">하는 법</button></div>
+  </div></div>`;
+  drawHero($('#hero'));
+  $('#go').onclick = () => { newGame(); screenBrief(); };
+  $('#how').onclick = screenHow;
+}
+function screenHow(){
+  $('#app').innerHTML = `
+  <div class="win"><div class="bar"><span>교육자료.md</span></div>
+  <div class="body stack">
+    <h2>하는 법</h2>
+    <p>1. 게시판에서 <b>상대 댓글을 눌러</b> 대상으로 고르세요. 답하지 않은 상대 댓글은 매 턴 여론을 깎습니다.</p>
+    <p>2. 상대 댓글 유형에 맞는 <b>대응법</b>을 고르세요. 상성이 맞으면 한 방에 잠재우고, 틀리면 역효과가 납니다.</p>
+    <div class="legend">
+      ${Object.keys(TACTICS).map(k=>`<span>${TACTICS[k].icon} ${TACTICS[k].name} → ${typeList(k)}에 강함${weakList(k)?' · '+weakList(k)+'엔 역효과':''}</span>`).join('')}
+    </div>
+    <p>3. 부계정마다 <b>말투</b>가 다릅니다. 같은 계정을 연달아 쓰면 의심받아요.</p>
+    <p>4. 의뢰를 성공하면 <b>레벨 업</b>. 더 큰 의뢰인이 찾아오고, 새 도구가 열립니다. 돈 드는 도구는 의뢰인이 준 <b>작전비</b>에서 빠지고, 남은 작전비는 당신 몫이에요.</p>
+    <p>5. 의심도가 100이 되면 방금 쓴 계정이 정지됩니다. 계정이 0개가 되거나 같은 의뢰를 두 번 연속 망치면 끝.</p>
+    <div class="row"><button class="btn" id="go">알겠음</button></div>
+  </div></div>`;
+  $('#go').onclick = screenTitle;
+}
+
+/* ---------- 의뢰서 ---------- */
+function screenBrief(){
+  const d = ROUNDS[S.r];
+  $('#app').innerHTML = `
+  <div class="win"><div class="bar"><span>의뢰_0${S.r+1}.md${S.fails?' (재도전)':''}</span><span class="num">${won(S.money)}</span></div>
+  <div class="body stack">
+    ${ladder()}
+    <div class="memo">
+      <span class="k">의뢰인 · ${esc(d.tier)}</span><span class="big">${esc(d.client)}</span>
+      <span>${esc(d.ask)}</span>
+      <span class="k">작업 장소 · ${esc(SKINS[d.skin].place)} 「${esc(SKINS[d.skin].name)}」</span><span>${esc(d.title)}</span>
+      <span class="k">목표</span><span><b>${d.turns}턴</b> 안에 「${esc(d.S)}」 여론을 <b>${d.target}%</b> 이상으로</span>
+      <span class="k">성공 보수 / 작전비</span><span class="big">${d.payNote ? esc(d.payNote) + ' (' + won(d.pay) + ')' : won(d.pay)} / ${d.budget ? won(d.budget) : '없음'}</span>
+    </div>
+    <p class="dim">${esc(SKINS[d.skin].name)} 현재 접속자 <span class="num">${users().toLocaleString()}</span>명</p>
+    <div class="row"><button class="btn" id="go">로그인</button></div>
+  </div></div>`;
+  $('#go').onclick = startRound;
+}
+
+/* ---------- 플레이 ---------- */
+function startRound(){
+  const d = ROUNDS[S.r];
+  makeBags();
+  S.op = d.start; S.sus = Math.max(0, S.sus - 30); S.turn = 0; S.busy = false; S.open = []; S.sel = null;
+  S.budget = d.budget; S.buffs = []; S.shield = 0;
+  $('#app').innerHTML = `
+  <div class="win" id="hudwin"><div class="bar"><span>의뢰_0${S.r+1}.md</span><span class="ghost">작업일지.md</span><span>Lv.${level()}</span></div>
+    <div class="body stack">
+      <div class="fm"><span class="cm">---</span>
+        <div><span class="key">client:</span> <span class="str">"${esc(d.client)}"</span></div>
+        <div><span class="key">turns_left:</span> <b id="turns"></b></div>
+        <div><span class="key">budget:</span> <span class="str" id="budget"></span></div>
+        <div><span class="key">wallet:</span> <span class="str" id="money"></span></div>
+        <div><span class="key">accounts:</span> <b id="accn"></b></div>
+        <div><span class="key">online:</span> <span id="users"></span></div>
+        <span class="cm">---</span></div>
+      <div class="prog"><span>${esc(d.S)}</span><code id="opbar"></code><b id="opv"></b><span class="cmt">// 목표 ${d.target}% (┃)</span></div>
+      <div class="prog"><span>의심도</span><code class="w" id="susbar"></code><b id="susv"></b><span class="cmt">// 100이면 계정 정지</span></div>
+      <div class="cmt">// 미답변 댓글 <span id="drain"></span></div>
+      <div class="buffs" id="buffs"></div>
+    </div></div>
+  ${renderBoard(d)}
+  <div class="win"><div class="bar"><span>actions.md</span></div>
+    <div class="body stack">
+      <h3>계정</h3>
+      <div class="chips" id="chips"></div>
+      <div class="hrow"><h3>대응</h3><span class="cmt">// 상대 댓글 유형에 맞춰 고르기</span></div>
+      <div id="tgt"></div>
+      <div class="tgrid">${Object.keys(TACTICS).map(k=>{ const T = TACTICS[k];
+        const strong = Object.keys(FT).filter(x=>T.vs[x]===2).map(x=>[FT[x].icon+' 강함',1]);
+        const weak = Object.keys(FT).filter(x=>T.vs[x]===0).map(x=>[FT[x].icon+' 역효과',0]);
+        return `<button class="tile tac" data-t="${k}"><span class="ic" style="background:${TAC_BG[k]}">${T.icon}</span><span class="nm">${T.name}</span><span class="fxs">${strong.concat(weak).map(chip).join('')}</span><span class="badge"></span></button>`; }).join('')}</div>
+      <div class="hrow"><h3>도구</h3><span class="cmt">// 💰는 작전비에서 차감</span></div>
+      <div class="ggrid" id="tools">${TOOLS.filter(t=>t.lv<=level()).map(t=>`<button class="tile tool ${t.cost?'paid':''}" data-g="${t.id}"><span class="ic">${t.icon}</span><span class="nm">${t.name}</span><span class="fxs">${TOOL_FX[t.id].map(chip).join('')}</span>${t.cost?`<span class="price">💰 ${won(t.cost)}</span>`:'<span class="price free">무료</span>'}</button>`).join('')}</div>
+      ${(() => { const lk = TOOLS.filter(t=>t.lv>level()); if (!lk.length) return '<p class="cmt">// 모든 도구 해금 완료</p>';
+        const nl = lk[0].lv; return `<div class="lockrow"><span class="lk">🔒 잠긴 도구 ${lk.length}개</span><span>다음 해금 <b>Lv.${nl}</b>: ${lk.filter(t=>t.lv===nl).map(t=>t.icon+' '+t.name).join(', ')}</span></div>`; })()}
+    </div></div>
+  <div class="status"><span class="br">⎇ main</span><span id="stline"></span><span>UTF-8</span><span>Markdown</span></div>`;
+  document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => reply(b.dataset.t));
+  document.querySelectorAll('[data-g]').forEach(b => b.onclick = () => useTool(b.dataset.g));
+  const th = $('#thumb'); if (th && SK().thumb) drawPix(th, PIX[SK().thumb].rows, PIX[SK().thumb].pal);
+  spawnFoe(); spawnFoe(); spawnFoe();
+  autoAcc(); hud();
+}
+
+function spawnFoe(){
+  const d = ROUNDS[S.r];
+  if (S.open.length >= 5) return;
+  const pool = []; for (const k in d.types) for (let i=0;i<d.types[k];i++) pool.push(k);
+  const type = pick(pool);
+  const f = {id:++S.fid, type, hp:2, nick:B.nicks.next()};
+  const el = document.createElement('div');
+  el.className = 'c foe open'; el.tabIndex = 0; el.setAttribute('role','button');
+  el.innerHTML = `<img alt="" src="${avatar(f.nick,'foe')}"><div class="x"><div class="n">${esc(f.nick)} <span class="tag">${FT[type].icon} ${FT[type].name}</span> <span class="hp"></span></div><div class="t">${esc(B.foe[type].next())}</div><div class="meta">${SK().meta('foe')}</div><div class="replies"></div></div>`;
+  el.onclick = () => select(f.id);
+  el.onkeydown = e => { if (e.key==='Enter' || e.key===' '){ e.preventDefault(); select(f.id); } };
+  f.el = el; S.open.push(f); drawHp(f);
+  feedAdd(el);
+}
+function drawHp(f){ f.el.querySelector('.hp').textContent = '■'.repeat(Math.max(0,f.hp)); }
+function feedAdd(el){ const fd = $('#feed'); if (!fd) return; fd.appendChild(el); fd.scrollTop = fd.scrollHeight; }
+function line(cls, text){ const el = document.createElement('div'); el.className = 'c ' + cls; el.innerHTML = `<div class="x">${esc(text)}</div>`; feedAdd(el); }
+function commentEl(nick, text, side){
+  const el = document.createElement('div'); el.className = 'c ' + side;
+  el.innerHTML = `<img alt="" src="${avatar(nick,side)}"><div class="x"><div class="n">${esc(nick)}</div><div class="t">${esc(text)}</div><div class="meta">${SK().meta(side)}</div></div>`;
+  return el;
+}
+function addReply(f, nick, text, side){ f.el.querySelector('.replies').appendChild(commentEl(nick,text,side)); const fd=$('#feed'); if (f.el===fd.lastElementChild) fd.scrollTop = fd.scrollHeight; }
+function silence(f, nick, text){
+  addReply(f, nick || f.nick, text || B.rep.win[f.type].next(), nick ? 'me' : 'foe');
+  f.el.classList.remove('open','sel'); f.el.classList.add('done'); f.el.onclick = null; f.el.onkeydown = null;
+  f.el.removeAttribute('tabindex'); f.el.removeAttribute('role');
+  S.open = S.open.filter(x=>x!==f);
+  if (S.sel === f.id) S.sel = null;
+}
+
+function select(id){
+  if (S.busy) return;
+  S.sel = S.sel===id ? null : id;
+  document.querySelectorAll('.c.foe').forEach(e=>e.classList.remove('sel'));
+  const f = S.open.find(x=>x.id===S.sel); if (f) f.el.classList.add('sel');
+  hud();
+}
+function autoAcc(){ let best = 0; S.accs.forEach((a,i)=>{ if (a.used < S.accs[best].used) best = i; }); S.acc = best; }
+
+function hud(){
+  const d = ROUNDS[S.r];
+  $('#opv').textContent = Math.round(S.op) + '%';
+  $('#opbar').textContent = abar(S.op, d.target);
+  $('#susbar').textContent = abar(S.sus);
+  $('#stline').textContent = `Ln ${S.turn+1}, Col ${S.st.actions+1} · 의뢰 ${S.r+1}/${ROUNDS.length}`;
+  $('#susv').textContent = Math.round(S.sus) + ' / 100';
+  $('#turns').textContent = d.turns - S.turn;
+  $('#money').textContent = won(S.money);
+  $('#budget').textContent = d.budget ? won(S.budget) : '없음';
+  $('#users').textContent = users().toLocaleString() + '명';
+  const bs = $('#bstat'); if (bs) bs.innerHTML = SK().stat();
+  $('#ccount').textContent = document.querySelectorAll('#feed .c.me, #feed .c.foe').length;
+  $('#drain').textContent = S.open.length + '개 · 턴당 -' + S.open.reduce((s,f)=>s+FT[f.type].drain,0) + '%';
+  $('#buffs').innerHTML = S.buffs.map(b=>`<span>📹 바이럴 진행 중 +${b.op}%/턴 · ${b.n}턴</span>`).join('') + (S.shield ? `<span>🔑 정지 면제 ${S.shield}턴</span>` : '');
+  $('#accn').textContent = S.accs.length;
+  $('#chips').innerHTML = S.accs.map((a,i)=>`<button class="chip ${i===S.acc?'on':''}" data-i="${i}"><img alt="" src="${avatar(a.nick,'me')}">@${esc(a.nick)} <small>#${esc(a.tone)}</small>${a.used===S.turn-1?'<small class="hot">방금 씀</small>':''}</button>`).join('');
+  document.querySelectorAll('.chip').forEach(c => c.onclick = () => { S.acc = +c.dataset.i; hud(); });
+  const f = S.open.find(x=>x.id===S.sel);
+  $('#tgt').className = f ? 'tgt on' : 'tgt';
+  $('#tgt').innerHTML = f ? `🎯 대상 <b>@${esc(f.nick)}</b> <span class="tag2">${FT[f.type].icon} ${FT[f.type].name}</span> <span class="cmt">// 초록 타일이 정답</span>` : '👆 게시판에서 <b>상대 댓글</b>을 눌러 대상을 고르세요';
+  document.querySelectorAll('[data-t]').forEach(b => { const v = f ? TACTICS[b.dataset.t].vs[f.type] : -1;
+    b.disabled = !f || S.busy; b.classList.toggle('good', v===2); b.classList.toggle('bad', v===0);
+    b.querySelector('.badge').textContent = v===2 ? '추천' : v===0 ? '역효과' : ''; });
+  document.querySelectorAll('[data-g]').forEach(b => { const t = TOOLS.find(x=>x.id===b.dataset.g); const poor = t.cost>S.budget;
+    b.disabled = S.busy || t.lv>level() || poor; b.classList.toggle('poor', poor); if (t.cost) b.querySelector('.price').textContent = poor ? '💸 작전비 부족' : '💰 ' + won(t.cost); });
+}
+
+function useAcc(){
+  const a = S.accs[S.acc];
+  if (a.used === S.turn-1){ S.sus += 7; line('sys','🕵️ "이 사람 방금 전에도 댓글 달았는데?"'); }
+  a.used = S.turn; S.lastAcc = S.acc;
+  return a;
+}
+
+function reply(t){
+  const f = S.open.find(x=>x.id===S.sel); if (!f || S.busy) return;
+  const T = TACTICS[t], m = T.vs[f.type], a = useAcc();
+  S.st.actions++; S.st.replies++;
+  addReply(f, a.nick, voice(a, B.my[t].next()), 'me');
+  if (m === 0){
+    S.op -= 4; S.sus += T.sus + 6; S.st.back++;
+    addReply(f, f.nick, B.rep.back.next(), 'foe');
+    line('sys', `역효과! ${FT[f.type].name}한테 ${T.name}은 안 먹힌다.`);
+  } else {
+    f.hp -= m; S.op += T.op * m; S.sus += T.sus;
+    if (t==='divert' && f.type==='sus') S.sus -= 8;
+    if (m===2) S.st.strong++;
+    if (f.hp <= 0) silence(f);
+    else { addReply(f, f.nick, B.rep.hurt.next(), 'foe'); drawHp(f); }
+  }
+  S.sel = null;
+  endTurn();
+}
+
+function useTool(id){
+  const t = TOOLS.find(x=>x.id===id);
+  if (S.busy || t.lv>level() || t.cost>S.budget) return;
+  const d = ROUNDS[S.r];
+  S.st.actions++;
+  if (t.cost){ S.budget -= t.cost; S.st.tools++; S.st.spent += t.cost; }
+  const buy = msg => line('buy', `💸 -${won(t.cost)} · ${msg}`);
+  switch(id){
+    case 'post': { const a = useAcc(); S.op += 6; S.sus += 5; feedAdd(commentEl(a.nick, '[새 글] ' + voice(a, B.my.post.next()), 'me')); break; }
+    case 'boost': S.op += 4*S.accs.length; S.sus += 15; S.st.boosts++; line('evt', `👍 「${d.S}」 쪽 댓글 추천 수가 갑자기 ${S.accs.length*37}개 올랐다.`); break;
+    case 'alt': {
+      const a = mkAcc(S.usedPersonas++); a.used = S.turn; S.accs.push(a); S.sus += 4; S.st.alts++;
+      feedAdd(commentEl(a.nick, voice(a, `오늘 가입했어요. 근데 이 글 보니까 ${d.S} 말이 맞는 듯`), 'me')); break; }
+    case 'lurk': S.sus -= 20; line('evt', pick(['💤 로그아웃하고 컵라면을 먹었다.','💤 유튜브 쇼츠를 40분 봤다.','💤 낮잠을 잤다. 꿈에서도 댓글을 달았다.'])); break;
+    case 'meme': S.op += 10; S.sus += 3; buy(pick(['짤 장인이 만든 짤이 개념글에 올라갔다.','외주 짤이 생각보다 웃기다. 퍼지는 중.','짤 장인: "수정은 2번까지 무료입니다"'])); break;
+    case 'macro': S.op += 16; S.sus += 24; buy('매크로가 추천을 1,200개 눌렀다. 1초 만에.'); break;
+    case 'youtube': S.op += 4; S.sus += 3; S.buffs.push({n:3, op:6}); buy(`구독자 80만 유튜버가 "${d.X}, 솔직히 말씀드립니다" 영상을 올렸다. (유료 광고 표시 없음)`); break;
+    case 'vtuber': {
+      const crowd = S.open.filter(f=>f.type==='crowd');
+      crowd.forEach(f => silence(f, '버튜버 팬클럽', pick(['방장님이 그렇다면 그런 거임','오시가 추천했으면 맞음','💜💜💜'])));
+      S.op += 6 + crowd.length*6; S.sus += 4;
+      buy(`버튜버가 방송 중에 「${d.S}」 편을 들었다. 팬덤이 몰려와 동조형 ${crowd.length}명을 덮었다.`); break; }
+    case 'admin': S.sus = 0; S.shield = 3; buy('운영자에게 기프티콘을 보냈다. 운영자: "음… 잠깐 자리 비우겠습니다."'); break;
+    case 'press': {
+      const logic = S.open.filter(f=>f.type==='logic');
+      logic.forEach(f => silence(f, null, pick(['…기사로 나왔으면 맞겠지','언론이 그렇다니까 뭐','(삭제된 댓글입니다)'])));
+      S.op += 12 + logic.length*5; S.sus = Math.max(0, S.sus - 15);
+      buy(`[단독] "${d.X}, 알고 보니…" 기사가 포털 메인에 걸렸다. 팩트형 ${logic.length}명이 조용해졌다.`); break; }
+    case 'bots': {
+      for (let i=0;i<3;i++){ const nick = BOT_NAMES[S.botN++ % BOT_NAMES.length] + (S.botN>BOT_NAMES.length ? S.botN : ''); S.accs.push({...BOT_PERSONA, nick, used:S.turn}); }
+      S.st.alts += 3; S.sus += 18; buy('해외 봇 계정 3개가 입국했다. 한국어가 조금 이상하다.'); break; }
+    case 'poll': S.op += 24; S.sus += 8; buy(`「${d.S} 지지율 급상승」 여론조사가 발표됐다. 표본 수는 어디에도 없다.`); break;
+    case 'portal': {
+      const n = S.open.length; S.open.slice().forEach(f => silence(f, null, '(검색 결과에 노출되지 않는 게시물입니다)'));
+      S.op += 10 + n*3; S.sus += 15; buy(`실시간 검색어가 「${d.X} 응원」으로 바뀌었다. 상대 댓글 ${n}개가 검색에서 사라졌다.`); break; }
+  }
+  S.sel = null;
+  endTurn();
+}
+
+function endTurn(){
+  const d = ROUNDS[S.r];
+  S.busy = true; hud();
+  setTimeout(()=>{
+    S.open.forEach(f => { S.op -= FT[f.type].drain; if (f.type==='sus') S.sus += 3; });
+    S.buffs.forEach(b => { S.op += b.op; b.n--; }); S.buffs = S.buffs.filter(b=>b.n>0);
+    const rate = d.fading ? d.spawn * (1 - S.turn/d.turns) : d.spawn;
+    if (Math.random() < rate + .3) spawnFoe(); if (Math.random() < rate * .3) spawnFoe();
+    if (d.fading && S.turn === 8) line('evt', '⚡ 단골 몇 명이 "이 갤 이제 안 들어올게요"라고 남기고 떠났다.');
+    if (Math.random() < .22){ const e = B.events.next(); S.op += e.op; S.sus += e.sus; line('evt', '⚡ ' + e.t); }
+    S.sus = clamp(S.sus - 3, 0, 100); S.op = clamp(S.op, 0, 100);
+    if (S.shield){ S.shield--; S.sus = Math.min(S.sus, 99); }
+    S.turn++;
+    if (S.sus >= 100 && banCheck()) return;
+    autoAcc();
+    S.busy = false; hud();
+    if (S.turn === 6) return showDilemma();
+    if (S.turn >= d.turns){ S.busy = true; hud(); setTimeout(screenResult, 700); }
+  }, 450);
+}
+
+function banCheck(){
+  const i = S.lastAcc ?? S.acc;
+  const a = S.accs.splice(Math.min(i, S.accs.length-1), 1)[0];
+  S.st.bans++; S.sus = 40;
+  line('sys', `🚫 운영자: 「${a.nick}」 님은 여론 조작 의심으로 이용 정지되었습니다.`);
+  const h = $('#hudwin'); h.classList.remove('shake'); void h.offsetWidth; h.classList.add('shake');
+  if (!S.accs.length){ hud(); setTimeout(()=>screenEnding('banned'), 900); return true; }
+  return false;
+}
+
+function showDilemma(){
+  const d = ROUNDS[S.r], q = d.dilemma;
+  S.busy = true; hud();
+  const arrows = (v, up, down) => v >= 20 ? up.repeat(3) : v >= 10 ? up.repeat(2) : v > 0 ? up : v === 0 ? '변화 없음' : v <= -10 ? down.repeat(2) : down;
+  const fx = c => `
+    <li class="${c.op>0?'pos':c.op<0?'neg':''}">여론 <b>${arrows(c.op,'▲','▼')}</b></li>
+    <li class="${c.sus>0?'neg':c.sus<0?'pos':''}">의심 <b>${arrows(c.sus,'▲','▼')}</b></li>
+    ${c.money ? `<li class="pos">보너스 <b>+${won(c.money)}</b></li>` : ''}
+    ${c.karma ? '<li class="cross">⚠ 선을 넘음</li>' : '<li class="keep">선은 지킴</li>'}`;
+  const ov = document.createElement('div'); ov.className = 'overlay dil';
+  ov.innerHTML = `<div class="conflict" role="dialog" aria-modal="true" aria-labelledby="dq">
+    <div class="cbar"><span>⚠ MERGE CONFLICT</span><span>선택.md · 의뢰 ${S.r+1} · 턴 ${S.turn}</span></div>
+    <div class="cbody">
+      <div class="dm"><img alt="" src="${avatar(d.client,'foe')}"><div><div class="from">${esc(d.client)}</div><p id="dq">${esc(q.t)}</p></div></div>
+      <div class="choices">
+        <button class="choice cross" id="da"><span class="mk">&lt;&lt;&lt;&lt;&lt;&lt;&lt; 선 넘기</span><span class="lb">${esc(q.a.l)}</span><ul>${fx(q.a)}</ul><span class="go">Accept ▶</span></button>
+        <div class="sep" aria-hidden="true">=======</div>
+        <button class="choice keep" id="db"><span class="mk">&gt;&gt;&gt;&gt;&gt;&gt;&gt; 참기</span><span class="lb">${esc(q.b.l)}</span><ul>${fx(q.b)}</ul><span class="go">Accept ▶</span></button>
+      </div>
+      <p class="karma">// 지금까지 선을 넘은 횟수: <b>${S.karma}</b>번</p>
+    </div></div>`;
+  document.body.appendChild(ov);
+  $('#da').focus();
+  const choose = c => {
+    ov.remove();
+    S.op = clamp(S.op + c.op, 0, 100); S.sus = clamp(S.sus + c.sus, 0, 100); S.karma += c.karma; S.money += c.money || 0;
+    line(c.karma ? 'sys' : 'evt', '→ ' + c.log);
+    if (S.sus >= 100 && !S.shield && banCheck()) return;
+    S.busy = false; hud();
+  };
+  $('#da').onclick = () => choose(q.a);
+  $('#db').onclick = () => choose(q.b);
+}
+
+/* ---------- 결과 / 레벨업 / 엔딩 ---------- */
+function screenResult(){
+  const d = ROUNDS[S.r];
+  const win = S.op >= d.target;
+  const last = S.r === ROUNDS.length - 1;
+  let pay = 0, kept = 0;
+  if (win){ pay = d.pay + Math.round((S.op - d.target) * d.pay / 50); kept = S.budget; S.money += pay + kept; S.st.wins++; }
+  const news = last ? (win ? d.newsWin : d.newsLose) : (win ? d.news : null);
+  const fired = !win && S.fails >= 1;
+  $('#app').innerHTML = `
+  <div class="win"><div class="bar"><span>정산_0${S.r+1}.md</span><span class="num">${won(S.money)}</span></div>
+  <div class="body stack">
+    <h2>${win ? '의뢰 성공' : '의뢰 실패'}</h2>
+    <p>최종 여론 <b>${Math.round(S.op)}%</b> (목표 ${d.target}%)</p>
+    <div class="memo"><span>${win ? esc(d.win) : fired ? '의뢰인: "두 번은 안 봐줍니다."' : '의뢰인: "한 번만 더 기회 드릴게요. 작전비는 다시 드립니다."'}</span>
+      ${win ? `<span class="k">성공 보수 + 남은 작전비</span><span class="big">+${won(pay)}${kept?' + '+won(kept):''}</span>` : '<span class="big">+0원</span>'}</div>
+    ${news ? `<div class="memo"><span class="k">${esc(news.k)}</span><span class="big">${esc(news.t)}</span><span>${esc(news.q)}</span></div>` : ''}
+    <p class="dim">${esc(SKINS[d.skin].name)} 접속자 <span class="num">${users().toLocaleString()}</span>명</p>
+    <div class="row"><button class="btn" id="go">${last || fired ? '로그아웃' : win ? '다음' : '재도전'}</button></div>
+  </div></div>`;
+  $('#go').onclick = () => {
+    if (fired) return screenEnding('fired');
+    if (last) return screenEnding('clear');
+    if (win){ S.fails = 0; S.r++; screenLevelUp(); }
+    else { S.fails++; screenBrief(); }
+  };
+}
+
+function screenLevelUp(){
+  const nu = TOOLS.filter(t=>t.lv===level());
+  const d = ROUNDS[S.r];
+  $('#app').innerHTML = `
+  <div class="win"><div class="bar"><span>CHANGELOG.md</span><span class="num">${won(S.money)}</span></div>
+  <div class="body stack">
+    <h2>Lv.${level()} 달성</h2>
+    ${ladder()}
+    <p>소문이 났다. 이번엔 <b>${esc(d.tier)}</b>에서 연락이 왔다.</p>
+    ${nu.length ? `<p class="dim">새로 쓸 수 있는 도구</p><div class="unlock">${nu.map(t=>`<div><b>${t.icon} ${t.name}</b><span>${esc(t.desc)}</span><span class="cash">${won(t.cost)}</span></div>`).join('')}</div>` : ''}
+    <div class="row"><button class="btn" id="go">DM 확인</button></div>
+  </div></div>`;
+  $('#go').onclick = screenBrief;
+}
+
+function screenEnding(kind){
+  const st = S.st;
+  const lines = kind === 'banned' ? [
+    '모든 계정이 정지됐다.',
+    '다음 날, 같은 DM이 다른 사람에게 갔다.',
+    '그 사람은 당신보다 건당 500원 싸게 일하기로 했다.',
+    '게시판은 아무 일 없었다는 듯 계속 싸우고 있었다.',
+  ] : kind === 'fired' ? [
+    '같은 의뢰를 두 번 망쳤다.',
+    '업계에 소문이 났다. "그 사람 요즘 감 떨어졌대."',
+    'DM이 더 이상 오지 않는다.',
+    '대신 당신이 쓰던 닉네임으로 누군가 계속 댓글을 달고 있다.',
+  ] : [
+    `두쫀쿠 2개에서 시작해 ${won(S.money)}을 벌었다.`,
+    '정산 내역을 보다가 이상한 점을 발견했다.',
+    '지난달엔 동글당을 위해, 이번 달엔 네모당을 위해 일했다. 같은 계정들로.',
+    '당신과 싸우던 「반대파」 대부분은 다른 여론 알바들의 부계정이었다.',
+    S.karma === 0 ? '당신은 끝까지 선은 안 넘었다고 생각했다. 그래도 치킨집 간판은 내려갔다.'
+                  : `당신이 선을 넘은 횟수: ${S.karma}번. 기억나는 건 그중 하나도 없었다.`,
+    '처음 부탁했던 고닉 「갤주」는 언제부턴가 갤에 들어오지 않는다.',
+    '당신이 다녀간 곳들의 실제 이용자 수: 3명',
+  ];
+  const D = 1.1;
+  $('#app').innerHTML = `
+  <div class="win"><div class="bar"><span>${kind==='clear' ? 'ENDING.md' : 'GAME_OVER.md'}</span><span class="num">${won(S.money)}</span></div>
+  <div class="body stack ending">
+    ${lines.map((l,i)=>`<p class="line" style="animation-delay:${i*D}s">${esc(l)}</p>`).join('')}
+    <p class="line final" style="animation-delay:${lines.length*D+.4}s">여론은 바뀌었다.<br>그걸 본 사람이 남아 있었다면.</p>
+    <div class="stats line" style="animation-delay:${lines.length*D+1.4}s">
+      <span class="dim">최종 레벨</span><span class="num">Lv.${level()}</span>
+      <span class="dim">단 답글 / 한 방 제압</span><span class="num">${st.replies} / ${st.strong}</span>
+      <span class="dim">역효과</span><span class="num">${st.back}</span>
+      <span class="dim">쓴 도구 / 쓴 작전비</span><span class="num">${st.tools} / ${won(st.spent)}</span>
+      <span class="dim">만든 계정 / 정지</span><span class="num">${st.alts} / ${st.bans}</span>
+      <span class="dim">선을 넘은 횟수</span><span class="num">${S.karma}</span>
+      <span class="dim">성공한 의뢰</span><span class="num">${st.wins} / ${ROUNDS.length}</span>
+    </div>
+    <div class="row line" style="animation-delay:${lines.length*D+1.8}s"><button class="btn" id="go">처음부터</button></div>
+  </div></div>`;
+  $('#go').onclick = screenTitle;
+}
+
+screenTitle();
+</script>
