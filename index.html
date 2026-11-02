@@ -263,6 +263,13 @@ canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;b
 .b-post.sns img{width:40px;height:40px;border-radius:50%;image-rendering:pixelated;flex:none}
 .skin-sns .c{border-bottom:1px solid var(--b-line)}
 .skin-sns .c img{border-radius:50%}
+/* 주제별 도트 그림 */
+.board canvas.art{display:block;width:256px;max-width:100%;height:auto;image-rendering:pixelated;border-radius:4px;margin-top:6px}
+.skin-blog .b-post canvas.art{width:320px;margin:8px auto}
+.b-place canvas.art{width:110px;flex:none;margin:0}
+.player canvas.art{height:100%;width:auto;margin:0;border-radius:0}
+.b-post.sns canvas.art{width:100%;max-width:320px;border:1px solid var(--b-line)}
+
 /* 플랫폼 전용 행동 타일 */
 .tile.skinact{border-color:var(--key);background:#7fd1b912}
 .tile.skinact .ic{background:#7fd1b926}
@@ -481,6 +488,158 @@ const ART = {
     t('???',3,2,'#333');
   },
 };
+/* 2~7단계 주제별 그림 (64×40 도트) */
+function artKit2(g){
+  const k = artKit(g);
+  k.disc = (cx,cy,rd,c) => { for (let y=-rd;y<=rd;y++) for (let x=-rd;x<=rd;x++) if (x*x+y*y <= rd*rd+rd) k.r(cx+x,cy+y,1,1,c); };
+  k.ring = (cx,cy,rd,c) => { for (let a=0;a<48;a++){ const an = a/48*Math.PI*2; k.r(cx+Math.round(Math.cos(an)*rd), cy+Math.round(Math.sin(an)*rd), 1,1,c); } };
+  k.man = (x,y,c,hair='#2b1a0e') => { k.r(x,y,3,1,hair); k.r(x,y+1,3,2,'#f2c39b'); k.r(x-1,y+3,5,5,c); k.r(x,y+8,1,4,'#333'); k.r(x+2,y+8,1,4,'#333'); };
+  k.phone = (x,y,w,h,scr='#eef4ff') => { k.r(x,y,w,h,'#1d1d1f'); k.r(x+1,y+2,w-2,h-4,scr); k.r(x+w/2-1|0,y+h-2,2,1,'#555'); };
+  return k;
+}
+Object.assign(ART, {
+  // ---- 2단계 게임 커뮤니티 ----
+  gacha(g){ const {r,t,disc,ring} = artKit2(g);
+    r(0,0,64,40,'#24124a'); [[5,30],[58,6],[50,34],[10,8],[40,4]].forEach(([x,y])=>r(x,y,1,1,'#fff'));
+    disc(38,15,10,'#9ad1ff'); ring(38,15,10,'#e8f6ff');
+    [[33,12,'#ff5d8f'],[40,10,'#ffd84a'],[36,18,'#7dff9b'],[43,17,'#b07cff'],[39,21,'#62e3ff']].forEach(([x,y,c])=>disc(x,y,2,c));
+    r(28,25,20,11,'#e23b3b'); r(35,28,6,4,'#222'); r(42,27,3,3,'#ffd84a'); r(26,36,24,2,'#8a1f1f');
+    t('SSR',2,2,'#ffd84a'); t('1%',2,9,'#ffffff'); r(1,11,10,1,'#ff2a2a'); t('0.3%',2,16,'#ff5d73');
+  },
+  aiart(g){ const {r,t,ring} = artKit2(g);
+    r(0,0,64,40,'#fde9f0'); for (let y=0;y<40;y+=4) r(0,y,64,1,'#f9dce6');
+    r(14,6,14,6,'#5a3cc0'); r(12,10,18,16,'#5a3cc0'); r(15,10,12,11,'#f7d6c4'); r(17,14,2,2,'#2b1a0e'); r(23,14,2,2,'#2b1a0e'); r(19,18,4,1,'#d46a7e');
+    r(13,26,16,14,'#ffffff'); r(13,26,16,2,'#e23b3b');
+    r(38,24,8,6,'#f7d6c4'); for (let i=0;i<6;i++) r(38+i+(i>2?1:0)-1, 19, 1, 5, '#f7d6c4');
+    r(36,30,4,8,'#ffffff');
+    ring(42,23,9,'#ff2a2a'); t('6?',52,4,'#ff2a2a');
+  },
+  shutdown(g){ const {r,t} = artKit2(g);
+    r(0,0,64,40,'#0d1b2a'); r(0,30,64,10,'#13283c');
+    r(40,8,14,8,'#3b5a3b'); r(36,12,6,4,'#3b5a3b'); r(52,4,4,6,'#3b5a3b'); r(30,6,10,3,'#2e472e'); r(46,16,3,10,'#2e472e'); r(41,16,3,10,'#2e472e'); r(54,6,1,1,'#ff3b3b');
+    r(0,15,64,9,'#c0392b'); t('SERVICE END',4,17,'#ffffff');
+    r(4,29,32,8,'#ffd84a'); t('500,000',6,31,'#1a1300');
+  },
+  // ---- 3단계 블로그 ----
+  sugar(g){ const {r,t} = artKit2(g);
+    r(0,0,64,40,'#fff7e6'); r(0,33,64,7,'#e7d3b0');
+    r(6,20,22,13,'#c98a3e'); r(8,18,18,4,'#d9a05a'); for (let x=10;x<26;x+=5) r(x,19,2,1,'#f0c27a');
+    r(32,10,16,23,'#ffffff'); r(33,8,14,3,'#eeeeee'); r(32,10,16,23,'#ffffff'); r(31,10,1,23,'#cccccc'); r(48,10,1,23,'#cccccc');
+    t('SUGAR',33,19,'#c0392b',6);
+    r(54,14,2,14,'#e23b3b'); r(52,14,6,2,'#e23b3b'); r(53,12,4,2,'#e23b3b'); r(54,10,2,2,'#e23b3b');
+    t('+38%',40,2,'#e23b3b');
+  },
+  scale(g){ const {r,t} = artKit2(g);
+    r(0,0,64,40,'#f4f9ff'); r(0,34,64,6,'#d8e2ee');
+    r(14,28,36,6,'#9aa5b1'); r(18,26,28,2,'#c4ccd6'); r(26,29,12,4,'#111'); t('72g',27,29,'#7dff9b',6);
+    r(22,12,20,14,'#ffd23f'); r(21,11,22,2,'#d9a800'); r(21,25,22,1,'#d9a800'); r(25,16,14,4,'#e63946');
+    t('80g',48,6,'#999'); r(47,8,14,1,'#ff2a2a');
+  },
+  doenjang(g){ const {r,t,ring} = artKit2(g);
+    r(0,0,64,40,'#fff7e6'); r(0,33,64,7,'#e7d3b0');
+    r(14,8,18,3,'#3b2412'); r(12,11,22,4,'#8b5a2b'); r(10,15,26,16,'#8b5a2b'); r(12,31,22,2,'#6b4320');
+    r(15,18,16,9,'#f5e6c8'); t('100%',16,20,'#2e7d32',6);
+    ring(46,18,8,'#555'); r(51,24,2,2,'#555'); r(53,26,2,2,'#555'); r(55,28,3,3,'#555');
+    t('?',44,15,'#ff2a2a');
+  },
+  // ---- 4단계 지도 리뷰 (가게 사진) ----
+  chicken(g){ const {r,t} = artKit2(g);
+    r(0,0,64,40,'#cfe8ff'); r(0,34,64,6,'#9a9a9a');
+    r(6,8,52,26,'#f3e2c4'); r(6,8,52,7,'#d63a2f'); t('CHICKEN',10,10,'#ffffff');
+    r(10,18,16,10,'#9ad1ff'); r(10,18,16,1,'#5a8fb8'); r(38,18,16,10,'#9ad1ff');
+    r(29,20,7,14,'#6b3f1f'); r(34,27,1,1,'#ffd84a');
+    r(14,22,4,3,'#c98a3e'); r(17,23,3,1,'#fff');
+  },
+  dessert(g){ const {r,t} = artKit2(g);
+    r(0,0,64,40,'#fff0f5'); r(0,34,64,6,'#c9b8be');
+    r(6,10,52,24,'#ffffff');
+    for (let x=4;x<60;x+=6){ r(x,6,3,5,'#ff8fb1'); r(x+3,6,3,5,'#ffffff'); }
+    r(4,11,56,1,'#d96b8f');
+    r(10,16,24,14,'#ffe4ec'); r(14,22,8,6,'#ffffff'); r(14,21,8,1,'#ff5d8f'); r(17,19,2,2,'#e23b3b'); r(24,23,6,5,'#c98a3e');
+    r(40,16,12,18,'#d96b8f'); r(49,25,1,1,'#ffd84a');
+    t('SINCE 2018',12,1,'#d96b8f',6);
+  },
+  butcher(g){ const {r,t} = artKit2(g);
+    r(0,0,64,40,'#2a2a2e'); r(0,34,64,6,'#55555c');
+    r(6,8,52,26,'#6e6a64'); r(6,8,52,6,'#3b2412'); t('SINCE 1996',9,9,'#f5e6c8',6);
+    r(10,17,26,13,'#ff4d4d'); r(10,17,26,13,'#d9343a');
+    [[13,18],[20,18],[27,18]].forEach(([x,y])=>{ r(x+2,y,1,2,'#ccc'); r(x,y+2,5,7,'#f28b8b'); r(x+1,y+4,3,2,'#fff1f1'); });
+    r(40,17,13,17,'#4a3526'); r(50,25,1,1,'#ffd84a');
+    r(30,14,4,2,'#ff3b3b');
+  },
+  // ---- 5단계 영상 ----
+  usim(g){ const {r,t,man,phone} = artKit2(g);
+    r(0,0,64,40,'#eef2f7'); r(0,34,64,6,'#c4ccd6');
+    ['#3a6ea5','#7a7f99','#c0392b','#2e7d32','#555'].forEach((c,i)=>man(3+i*6,20,c));
+    phone(40,4,16,30,'#1a2a44'); r(44,10,8,10,'#d9a800'); r(45,11,6,8,'#ffd23f'); r(46,13,4,4,'#d9a800');
+    r(45,23,6,1,'#ff2a2a'); r(46,22,4,1,'#ff2a2a'); r(47,21,2,1,'#ff2a2a'); r(47,24,2,4,'#ff2a2a'); r(44,28,8,1,'#ff2a2a');
+    t('6AM',2,4,'#333');
+  },
+  quit(g){ const {r,t,phone} = artKit2(g);
+    r(0,0,64,40,'#f4f4f6');
+    phone(20,1,24,38,'#ffffff');
+    for (let i=0;i<9;i++){ r(23,5+i*3,14,1,'#c4ccd6'); r(38,5+i*3,2,1,'#999'); }
+    r(23,32,5,1,'#e23b3b');
+    t('17',2,4,'#e23b3b'); t('STEPS',2,11,'#333',6); t('?',50,14,'#999');
+  },
+  evfire(g){ const {r,t} = artKit2(g);
+    r(0,0,64,40,'#3a3a40'); r(0,0,64,5,'#26262b'); r(0,33,64,7,'#55555c');
+    [[4,5],[58,5]].forEach(([x])=>r(x,5,3,28,'#4a4a52'));
+    for (let i=0;i<6;i++) r(10+i*8,2,4,1,'#ffeeaa');
+    r(18,23,28,7,'#e8e8e8'); r(22,19,18,5,'#e8e8e8'); r(24,20,6,3,'#9ad1ff'); r(32,20,6,3,'#9ad1ff'); r(20,30,4,3,'#111'); r(40,30,4,3,'#111');
+    [[26,10,6,'#ff9f1c'],[33,7,8,'#ff3b3b'],[40,11,5,'#ff9f1c'],[30,13,4,'#ffd84a'],[37,13,4,'#ffd84a']].forEach(([x,y,h,c])=>r(x,y,3,h,c));
+    r(24,4,20,3,'#55555c'); r(28,1,12,3,'#4a4a52');
+  },
+  // ---- 6단계 뉴스 ----
+  umji(g){ const {r,t,phone} = artKit2(g);
+    r(0,0,64,40,'#dfe6ee');
+    phone(18,1,28,38,'#b9d3e8');
+    r(21,5,22,5,'#ffe066'); r(23,7,14,1,'#1f5bd9');
+    r(24,12,19,4,'#ffffff'); r(26,13,12,1,'#1f5bd9');
+    r(21,18,20,4,'#ffffff'); r(23,19,14,1,'#1f5bd9');
+    r(24,24,19,4,'#ffffff'); r(26,25,10,1,'#1f5bd9');
+    r(21,30,16,4,'#ffe066'); r(23,31,8,1,'#333');
+    t('200+',48,4,'#e23b3b',6); t('LINK',2,4,'#1f5bd9',6);
+  },
+  streamer(g){ const {r,t,man} = artKit2(g);
+    r(0,0,64,40,'#1b1430');
+    r(34,4,26,16,'#2a2a2e'); r(36,6,22,12,'#e23b3b'); r(44,9,1,6,'#fff'); r(45,10,1,4,'#fff'); r(46,11,1,2,'#fff');
+    r(8,26,40,3,'#6b4f3a'); man(18,14,'#2a4d8f'); r(17,13,7,1,'#111'); r(16,14,1,3,'#111'); r(24,14,1,3,'#111');
+    r(26,20,3,6,'#555'); r(26,19,3,2,'#999');
+    [[4,30],[8,32],[52,26],[56,30],[48,32]].forEach(([x,y])=>{ r(x,y,4,2,'#ffd84a'); r(x,y+2,4,1,'#d9a800'); });
+    t('LIVE',2,2,'#ff3b3b',6); t('$$$',48,34,'#ffd84a',6);
+  },
+  vote(g){ const {r,t,phone} = artKit2(g);
+    r(0,0,64,40,'#eef2f7'); r(0,34,64,6,'#c4ccd6');
+    phone(4,2,22,34,'#ffffff'); r(7,8,16,8,'#d7f5dd'); r(9,10,10,1,'#333'); r(9,12,12,1,'#333'); r(9,14,6,1,'#333');
+    r(36,18,22,16,'#1f5bd9'); r(36,18,22,2,'#163f99'); r(42,18,10,1,'#0d2a66');
+    r(42,8,6,10,'#ffffff'); r(49,6,6,12,'#ffffff'); r(43,10,4,1,'#e23b3b'); r(50,8,4,1,'#e23b3b');
+    t('x2',28,4,'#e23b3b');
+  },
+  // ---- 7단계 SNS ----
+  nis(g){ const {r,t} = artKit2(g);
+    r(0,0,64,40,'#0b1530'); [[6,4],[20,8],[58,3],[44,6]].forEach(([x,y])=>r(x,y,1,1,'#fff'));
+    r(14,8,36,30,'#2a3550'); r(14,8,36,2,'#3b4a6b');
+    for (let y=12;y<36;y+=4) for (let x=17;x<48;x+=5) r(x,y,3,2, (x*7+y*3)%5 ? '#ffd84a' : '#1b2238');
+    r(26,32,12,6,'#1b2238');
+    r(50,2,13,7,'#111'); t('09:00',50,4,'#7dff9b',6);
+  },
+  cyber(g){ const {r,t,man} = artKit2(g);
+    r(0,0,64,40,'#3e4a2f'); for (let i=0;i<14;i++) r((i*17)%60, (i*11)%34, 5, 3, i%2 ? '#56633d' : '#2f3a22');
+    r(0,30,64,10,'#2b2b2b');
+    [[4,8],[24,8],[44,8]].forEach(([x,y])=>{ r(x,y,16,11,'#111'); r(x+1,y+1,14,9,'#1f5bd9'); r(x+3,y+3,8,1,'#9ad1ff'); r(x+3,y+5,10,1,'#9ad1ff'); r(x+7,y+11,2,2,'#111'); });
+    [[10,'#4b5a32'],[30,'#4b5a32'],[50,'#4b5a32']].forEach(([x,c])=>man(x,22,c,'#2f3a22'));
+    t('REPORT',2,1,'#ffd84a',6);
+  },
+  foreign(g){ const {r,t,ln} = artKit2(g);
+    r(0,0,64,40,'#0a1022');
+    [[6,10,12,8],[10,18,6,10],[24,8,8,6],[26,14,6,12],[36,8,18,10],[46,18,6,6],[52,28,8,5]].forEach(([x,y,w,h])=>r(x,y,w,h,'#2e5a3a'));
+    const pts = [[12,13],[29,11],[45,12],[55,30],[13,24]];
+    ln([pts[2],pts[0]],'#ff3b3b'); ln([pts[2],pts[1]],'#ff3b3b'); ln([pts[2],pts[3]],'#ff3b3b'); ln([pts[2],pts[4]],'#ff3b3b');
+    pts.forEach(([x,y],i)=>r(x-1,y-1,3,3, i===2 ? '#ff3b3b' : '#ffd84a'));
+    t('SPLIT',2,32,'#ff3b3b',6);
+  },
+});
 const pad = n => String(n).padStart(2,'0');
 
 /* ---------- 플랫폼 스킨 (전부 가상의 서비스) ---------- */
@@ -501,29 +660,29 @@ const SKINS = {
     foe:{ sus:['유동 IP 왜 다 비슷함?','이거 다 한 놈 같은데','추천 수 주작 아님?','IP 뒷자리 똑같은 거 실화냐','방금 그 고닉 부계 아님?'] }},
   forum:{name:'겜톡', place:'게임 커뮤니티', url:'gemtalk.forum/free', cnt:'댓글',
     head:d=>`<div class="b-top"><b class="logo">겜톡</b><span>${esc(d.h.board)}</span></div>
-      <div class="b-post"><span class="badge">🔥 이슈</span><div class="t">${esc(d.title)}</div><div class="m">${esc(d.h.author)} · 조회 ${R(5000,30000).toLocaleString()} · 추천 <span id="bstat"></span></div></div>`,
+      <div class="b-post"><span class="badge">🔥 이슈</span><div class="t">${esc(d.title)}</div><div class="m">${esc(d.h.author)} · 조회 ${R(5000,30000).toLocaleString()} · 추천 <span id="bstat"></span></div><canvas class="art" id="gimg" width="256" height="160" aria-label="${esc(d.thumbAlt||d.title)}"></canvas></div>`,
     stat:()=>Math.max(0, Math.round(420 - S.op*4)), meta:()=>`Lv.${R(1,99)} · 추천 ${R(0,50)}`},
   blog:{name:'초록블로그', place:'블로그 댓글', tone:'polite', url:'chorok.blog', cnt:'댓글', thumb:'snack',
     head:d=>`<div class="b-top"><b class="logo">초록블로그</b><span>${esc(d.h.blog)}</span></div>
-      <div class="b-post"><div class="t">${esc(d.title)}</div><div class="m">${esc(d.h.author)} · 2026. 11. 2.</div><canvas class="thumb" id="thumb" aria-label="${esc(d.thumbAlt||'')}"></canvas><div class="m">♡ 공감 <span id="bstat"></span></div></div>`,
+      <div class="b-post"><div class="t">${esc(d.title)}</div><div class="m">${esc(d.h.author)} · 2026. 11. 2.</div><canvas class="art" id="gimg" width="256" height="160" aria-label="${esc(d.thumbAlt||d.title)}"></canvas><div class="m">♡ 공감 <span id="bstat"></span></div></div>`,
     stat:()=>Math.round(20 + S.op*4), meta:()=>`${R(1,59)}분 전 · 답글`},
   map:{name:'노랑지도', place:'지도 앱 방문자 리뷰', tone:'polite', url:'noranmap.place', cnt:'방문자 리뷰', thumb:'shop',
     head:d=>`<div class="b-top"><b class="logo">노랑지도</b><span class="search">🔍 ${esc(d.h.place)}</span></div>
-      <div class="b-place"><canvas class="thumb" id="thumb" aria-label="${esc(d.thumbAlt||'')}"></canvas><div><b class="pn">${esc(d.h.place)}</b><div class="m">${esc(d.h.desc)}</div><div class="rate" id="bstat"></div></div></div>`,
+      <div class="b-place"><canvas class="art" id="gimg" width="256" height="160" aria-label="${esc(d.thumbAlt||d.title)}"></canvas><div><b class="pn">${esc(d.h.place)}</b><div class="m">${esc(d.h.desc)}</div><div class="rate" id="bstat"></div></div></div>`,
     stat:()=>{ const v = 5 - 3.6*S.op/100, n = Math.round(v); return `<span class="star">${'★'.repeat(n)}</span>${'☆'.repeat(5-n)} ${v.toFixed(1)}`; },
     meta:side=> side==='me' ? `<span class="star">★</span>☆☆☆☆ · 방문 1회` : `<span class="star">★★★★${Math.random()<.7?'★':'☆'}</span> · 방문 ${R(2,99)}회`},
   video:{name:'MeTube', place:'영상 댓글창', url:'metube.video', cnt:'댓글', thumb:'phone',
     head:d=>`<div class="b-top"><b class="logo"><span class="play">▶</span> MeTube</b><span>🔍</span></div>
-      <div class="player"><canvas class="thumb" id="thumb" aria-label="${esc(d.thumbAlt||'')}"></canvas><span class="dur">12:34</span></div>
+      <div class="player"><canvas class="art" id="gimg" width="256" height="160" aria-label="${esc(d.thumbAlt||d.title)}"></canvas><span class="dur">12:34</span></div>
       <div class="b-post"><div class="t">${esc(d.title)}</div><div class="m">${esc(d.h.channel)} · 조회수 <span id="bstat"></span>회</div></div>`,
     stat:()=>(124000 + S.turn*8300).toLocaleString(), meta:()=>`👍 ${R(0,999)} · 👎 · 답글`},
   news:{name:'네모포털', place:'포털 뉴스 댓글', url:'nemoportal.news', cnt:'댓글',
     head:d=>`<div class="b-top"><b class="logo">네모포털</b><span>뉴스</span></div>
-      <div class="b-post"><div class="kicker">${esc(d.h.kicker)}</div><div class="t">${esc(d.title)}</div><div class="m">${esc(d.h.press)} · 입력 2026.11.02 · <span id="bstat"></span></div></div>`,
+      <div class="b-post"><div class="kicker">${esc(d.h.kicker)}</div><div class="t">${esc(d.title)}</div><div class="m">${esc(d.h.press)} · 입력 2026.11.02 · <span id="bstat"></span></div><canvas class="art" id="gimg" width="256" height="160" aria-label="${esc(d.thumbAlt||d.title)}"></canvas></div>`,
     stat:()=>`댓글 중 ${esc(ROUNDS[S.r].S)} 우호 ${Math.round(S.op)}%`, meta:()=>`<span class="up">공감 ${R(0,999)}</span> · <span class="down">비공감 ${R(0,200)}</span>`},
   sns:{name:'짹짹', place:'SNS 타임라인', url:'jjakjjak.sns', cnt:'답글',
     head:d=>`<div class="b-top"><b class="logo">짹짹</b><span class="trend" id="bstat"></span></div>
-      <div class="b-post sns"><img alt="" src="${avatar(d.h.name,'me')}"><div><div class="m"><b>${esc(d.h.name)}</b> ${esc(d.h.handle)} · 1시간</div><div class="t">${esc(d.title)}</div><div class="m">💬 2.1천 · 🔁 8.4천 · ♥ 3.2만</div></div></div>`,
+      <div class="b-post sns"><img alt="" src="${avatar(d.h.name,'me')}"><div><div class="m"><b>${esc(d.h.name)}</b> ${esc(d.h.handle)} · 1시간</div><div class="t">${esc(d.title)}</div><canvas class="art" id="gimg" width="256" height="160" aria-label="${esc(d.thumbAlt||d.title)}"></canvas><div class="m">💬 2.1천 · 🔁 8.4천 · ♥ 3.2만</div></div></div>`,
     stat:()=>`실시간 트렌드 ${esc(ROUNDS[S.r].h.tag)} ${Math.max(1, Math.round(40 - S.op/2.5))}위`, meta:()=>`💬 ${R(0,40)} · 🔁 ${R(0,300)} · ♥ ${R(0,999)}`},
 };
 function abar(v, t){ const n = 20, f = Math.round(v/100*n), m = t==null ? -1 : Math.min(n-1, Math.round(t/100*n)); let o = ''; for (let i=0;i<n;i++) o += i===m ? '┃' : i<f ? '█' : '░'; return o; }
@@ -789,7 +948,7 @@ const ROUND_POOL = [
   [
     // 모티브: 2026년 확률형 아이템 '확률 편향' 인정과 이용자협회의 집단 신고, 옆 게임의 전액 환불
     { tier:'게임회사', skin:'forum', client:'모바일 게임사 「가챠월드」', ask:'"「운빨대전」 펫 뽑기 확률 건으로 이용자협회가 집단 신고를 한답니다. 환불은 절대 안 됩니다."',
-      url:'gemtalk.forum/unppal/free', h:{board:'운빨대전 자유게시판', author:'무과금장인'},
+      url:'gemtalk.forum/unppal/free', art:'gacha', h:{board:'운빨대전 자유게시판', author:'무과금장인'},
       title:'[속보] 운빨대전 펫 뽑기 확률 편향 인정함ㅋㅋ 집단 신고 위임 받는 중', S:'운영 옹호', F:'집단신고단', X:'운영', Y:'집단 신고',
       start:33, target:60, turns:12, pay:80000, budget:50000, spawn:.4, types:{logic:3,anger:3,sus:2,crowd:1},
       extraNicks:['핌업','과금러300만','신고위임863호'],
@@ -807,7 +966,7 @@ const ROUND_POOL = [
         b:{l:'로그를 지운다', op:-5, sus:-5, karma:0, log:'당신은 파일을 휴지통에 넣었다. 휴지통은 비우지 않았다.'}} },
     // 모티브: 2024~2025년 게임 신규 일러스트 AI 생성 의혹 논란
     { tier:'게임회사', skin:'forum', client:'모바일 게임사 「픽셀나이츠」', ask:'"신규 캐릭터 일러스트가 AI 그림이라고 난리예요. 외주 작가 작품이라고 해주세요. 사실 확인은… 묻지 마시고요."',
-      url:'gemtalk.forum/pixelknights/free', h:{board:'픽셀나이츠 자유게시판', author:'원화덕후'},
+      url:'gemtalk.forum/pixelknights/free', art:'aiart', h:{board:'픽셀나이츠 자유게시판', author:'원화덕후'},
       title:'[논란] 신캐 일러스트 손가락 6개임ㅋㅋ AI 아님?', S:'운영 옹호', F:'AI 판독단', X:'외주 작가', Y:'AI 의혹',
       start:33, target:60, turns:12, pay:80000, budget:50000, spawn:.4, types:{logic:3,anger:2,sus:2,crowd:2},
       extraNicks:['원화덕후','픽셀장인','일러수집가'],
@@ -825,7 +984,7 @@ const ROUND_POOL = [
         b:{l:'그냥 둔다', op:-5, sus:-5, karma:0, log:'당신은 그 기록을 닫았다.'}} },
     // 모티브: 2024~2025년 모바일 게임 서비스 종료 직전 고가 유료 상품 판매 논란
     { tier:'게임회사', skin:'forum', client:'「드래곤로드M」 운영사', ask:'"다음 주에 서비스 종료 공지 나갑니다. 그 전에 나온 50만원 패키지 얘기는… 덮어주세요."',
-      url:'gemtalk.forum/dragonlordm/free', h:{board:'드래곤로드M 자유게시판', author:'7년차길드장'},
+      url:'gemtalk.forum/dragonlordm/free', art:'shutdown', h:{board:'드래곤로드M 자유게시판', author:'7년차길드장'},
       title:'[분노] 섭종 공지 일주일 전에 50만원 패키지 판 거 실화냐', S:'운영 옹호', F:'환불 원정대', X:'운영사', Y:'환불',
       start:33, target:60, turns:12, pay:80000, budget:50000, spawn:.4, types:{logic:3,anger:3,sus:2,crowd:1},
       extraNicks:['7년차길드장','막피장인','버스기사'],
@@ -847,7 +1006,7 @@ const ROUND_POOL = [
   [
     // 모티브: 2026년 설탕·밀가루·전분당 가격 담합 과징금, 그 사이 오른 빵값·과자값
     { tier:'식품기업', skin:'blog', client:'제당 회사 「달달제당」', ask:'"담합 과징금 기사가 블로그까지 퍼졌어요. 가격은 원가 때문이라는 쪽으로 정리해 주세요."',
-      url:'chorok.blog/jangbaguni/2026', h:{blog:'자취생 장바구니 일기', author:'장바구니일기'}, thumb:'snack', thumbAlt:'과자 봉지 도트 그림',
+      url:'chorok.blog/jangbaguni/2026', art:'sugar', h:{blog:'자취생 장바구니 일기', author:'장바구니일기'}, thumb:'snack', thumbAlt:'과자 봉지 도트 그림',
       title:'빵값·과자값 왜 이렇게 올랐나 했더니… 설탕·밀가루 담합이었네요', S:'제당 옹호', F:'장바구니 소비자', X:'원가 상승', Y:'담합',
       start:32, target:62, turns:12, pay:150000, budget:100000, spawn:.42, types:{logic:2,anger:2,sus:2,crowd:2},
       extraNicks:['자취생','편의점알바생','동네빵집사장'],
@@ -865,7 +1024,7 @@ const ROUND_POOL = [
         b:{l:'안 한다', op:-3, sus:0, karma:0, log:'의뢰인: "아 네… 다음엔 적극적인 분 찾을게요."'}} },
     // 모티브: 가격은 그대로 두고 용량만 줄이는 '슈링크플레이션'과 용량 변경 표시 의무화
     { tier:'식품기업', skin:'blog', client:'과자 회사 「바삭제과」', ask:'"과자 용량을 10% 줄였는데 가격은 그대로예요. 눈치챈 블로거가 있네요. 무마 좀 부탁드립니다."',
-      url:'chorok.blog/alttle_jubu/1102', h:{blog:'알뜰살뜰 살림 블로그', author:'알뜰주부'}, thumb:'snack', thumbAlt:'과자 봉지 도트 그림',
+      url:'chorok.blog/alttle_jubu/1102', art:'scale', h:{blog:'알뜰살뜰 살림 블로그', author:'알뜰주부'}, thumb:'snack', thumbAlt:'과자 봉지 도트 그림',
       title:'바삭칩 용량 몰래 줄었네요… 직접 저울에 달아봤습니다', S:'제과 옹호', F:'알뜰 소비자', X:'바삭칩', Y:'용량 꼼수',
       start:32, target:62, turns:12, pay:150000, budget:100000, spawn:.42, types:{logic:3,anger:2,sus:1,crowd:2},
       extraNicks:['알뜰주부','과자덕후','마트직원'],
@@ -883,7 +1042,7 @@ const ROUND_POOL = [
         b:{l:'안 한다', op:-3, sus:0, karma:0, log:'의뢰인: "아 네… 다음엔 적극적인 분 찾을게요."'}} },
     // 모티브: 2025년 유명 식품·외식 기업의 원산지 표기 논란
     { tier:'식품기업', skin:'blog', client:'식품 회사 「백가네식품」', ask:'"「국산 재래 된장」에 수입 콩이 섞인 게 들통났어요. 표기 실수였다고 정리해 주세요."',
-      url:'chorok.blog/jipbap_lab/0815', h:{blog:'집밥 연구소', author:'집밥연구원'}, thumb:'jar', thumbAlt:'된장 항아리 도트 그림',
+      url:'chorok.blog/jipbap_lab/0815', art:'doenjang', h:{blog:'집밥 연구소', author:'집밥연구원'}, thumb:'jar', thumbAlt:'된장 항아리 도트 그림',
       title:'「국산」 된장이라더니… 원재료 표기 확인해 봤어요', S:'회사 옹호', F:'집밥러', X:'백가네', Y:'원산지 논란',
       start:32, target:62, turns:12, pay:150000, budget:100000, spawn:.42, types:{logic:2,anger:3,sus:1,crowd:2},
       extraNicks:['집밥연구원','맘카페회원','반찬가게사장'],
@@ -905,7 +1064,7 @@ const ROUND_POOL = [
   [
     // 모티브: 2026년 육계값 하락에도 그대로인 치킨값 + 필수품목 강매로 본사를 고소한 가맹점주들
     { tier:'프랜차이즈', skin:'map', client:'치킨 프랜차이즈 「치킨킹」 본사', ask:'"동글점 점주가 점주협의회 소송 총대예요. 가게 평점이 떨어지면 계약 해지 사유가 됩니다."',
-      url:'noranmap.place/chickenking-donggeul', h:{place:'치킨킹 동글점', desc:'치킨 · 네모시 동글동 · 점주 김순자 · 가맹 12년째'}, thumb:'shop', thumbAlt:'치킨집 도트 그림',
+      url:'noranmap.place/chickenking-donggeul', art:'chicken', h:{place:'치킨킹 동글점', desc:'치킨 · 네모시 동글동 · 점주 김순자 · 가맹 12년째'}, thumb:'shop', thumbAlt:'치킨집 도트 그림',
       title:'치킨킹 동글점 방문자 리뷰', S:'본사', F:'단골들', X:'치킨킹', Y:'동글점', loss:'치킨집 간판은 내려갔다',
       start:30, target:64, turns:12, pay:500000, budget:300000, spawn:.5, types:{logic:2,anger:1,sus:2,crowd:3}, fading:true,
       extraNicks:['동네주민','12년단골','점주협의회'],
@@ -924,7 +1083,7 @@ const ROUND_POOL = [
         b:{l:'로그아웃한다', op:-10, sus:-20, karma:0, log:'당신은 한참 화면을 보다가 노트북을 덮었다.'}} },
     // 모티브: 유행 디저트를 프랜차이즈가 베꼈다는 '원조 논란'과 개인 가게 별점 테러
     { tier:'프랜차이즈', skin:'map', client:'디저트 프랜차이즈 「쫀득왕」 본사', ask:'"동네 디저트 가게가 자기가 원조라고 SNS에 올렸어요. 메뉴 베낀 건 우리가 아니라는 쪽으로… 그리고 그 가게 평점 좀요."',
-      url:'noranmap.place/malsoon-bakery', h:{place:'말순제과', desc:'디저트 · 네모시 동글동 · 개인 가게 · 8년째'}, thumb:'shop', thumbAlt:'디저트 가게 도트 그림',
+      url:'noranmap.place/malsoon-bakery', art:'dessert', h:{place:'말순제과', desc:'디저트 · 네모시 동글동 · 개인 가게 · 8년째'}, thumb:'shop', thumbAlt:'디저트 가게 도트 그림',
       title:'말순제과 방문자 리뷰', S:'본사', F:'단골들', X:'쫀득왕', Y:'말순제과', loss:'디저트 가게 셔터는 내려갔다',
       start:30, target:64, turns:12, pay:500000, budget:300000, spawn:.5, types:{logic:2,anger:2,sus:2,crowd:3}, fading:true,
       extraNicks:['동네주민','8년단골','디저트탐방러'],
@@ -943,7 +1102,7 @@ const ROUND_POOL = [
         b:{l:'로그아웃한다', op:-10, sus:-20, karma:0, log:'당신은 한참 화면을 보다가 노트북을 덮었다.'}} },
     // 모티브: 대형 프랜차이즈 입점 후 동네 노포를 노린 리뷰 조작·별점 테러
     { tier:'프랜차이즈', skin:'map', client:'고깃집 프랜차이즈 「고기왕국」 본사', ask:'"새 매장 옆에 30년 된 정육식당이 있어요. 손님이 그쪽으로만 가요. 리뷰 좀 손봐 주세요."',
-      url:'noranmap.place/halmae-meat', h:{place:'할매 정육식당', desc:'고기 · 네모시 동글동 · 정육점 겸 식당 · 30년째'}, thumb:'shop', thumbAlt:'정육식당 도트 그림',
+      url:'noranmap.place/halmae-meat', art:'butcher', h:{place:'할매 정육식당', desc:'고기 · 네모시 동글동 · 정육점 겸 식당 · 30년째'}, thumb:'shop', thumbAlt:'정육식당 도트 그림',
       title:'할매 정육식당 방문자 리뷰', S:'본사', F:'단골들', X:'고기왕국', Y:'할매 정육식당', loss:'30년 된 정육식당 불은 꺼졌다',
       start:30, target:64, turns:12, pay:500000, budget:300000, spawn:.5, types:{logic:2,anger:2,sus:2,crowd:3}, fading:true,
       extraNicks:['동네주민','3대째단골','회식장인'],
@@ -966,7 +1125,7 @@ const ROUND_POOL = [
   [
     // 모티브: 2025년 통신사 유심 해킹 사태, 유심 교체 대란, 기업의 분쟁조정안 거부
     { tier:'대기업', skin:'video', client:'「한빛텔레콤」 대외협력실', ask:'"유심 건은 이제 그만 잠잠해졌으면 합니다. 배상안은 거부할 거고요. 예산은 신경 쓰지 마세요."',
-      url:'metube.video/watch?v=usim_daeran', h:{channel:'IT리뷰어 데이브'}, thumb:'phone', thumbAlt:'해킹 경고가 뜬 휴대폰 도트 그림',
+      url:'metube.video/watch?v=usim_daeran', art:'usim', h:{channel:'IT리뷰어 데이브'}, thumb:'phone', thumbAlt:'해킹 경고가 뜬 휴대폰 도트 그림',
       title:'[현장] 유심 교체 대란… 새벽 6시부터 줄 섰는데 재고 없답니다', S:'한빛 옹호', F:'피해 고객', X:'한빛텔레콤', Y:'유심 해킹',
       start:28, target:66, turns:12, pay:3000000, budget:1500000, spawn:.5, types:{logic:3,anger:2,sus:2,crowd:2},
       extraNicks:['IT유튜버','집단소송카페','대리점직원'],
@@ -984,7 +1143,7 @@ const ROUND_POOL = [
         b:{l:'그냥 둔다', op:-6, sus:0, karma:0, log:'집단소송 참가자가 10만 명을 넘겼다.'}} },
     // 모티브: 2025년 대형 이커머스 개인정보 대규모 유출과 회원 탈퇴 절차 논란
     { tier:'대기업', skin:'video', client:'이커머스 「번개몰」 대외협력실', ask:'"고객 정보 3천만 건 유출 건으로 탈퇴 영상이 떴어요. 탈퇴는 원래 어려운 거라고 해주세요."',
-      url:'metube.video/watch?v=quit_17steps', h:{channel:'소비자탐정'}, thumb:'phone', thumbAlt:'경고가 뜬 휴대폰 도트 그림',
+      url:'metube.video/watch?v=quit_17steps', art:'quit', h:{channel:'소비자탐정'}, thumb:'phone', thumbAlt:'경고가 뜬 휴대폰 도트 그림',
       title:'[실험] 번개몰 탈퇴 버튼 찾기… 17단계 걸렸습니다', S:'번개몰 옹호', F:'탈퇴 원정대', X:'번개몰', Y:'탈퇴 챌린지',
       start:28, target:66, turns:12, pay:3000000, budget:1500000, spawn:.5, types:{logic:3,anger:3,sus:2,crowd:2},
       extraNicks:['소비자탐정','새벽배송러','택배기사'],
@@ -1002,7 +1161,7 @@ const ROUND_POOL = [
         b:{l:'그냥 둔다', op:-6, sus:0, karma:0, log:'탈퇴 인증 영상이 1,000개를 넘겼다.'}} },
     // 모티브: 2024년 아파트 지하주차장 전기차 화재와 배터리 제조사 비공개 논란
     { tier:'대기업', skin:'video', client:'「한빛모터스」 대외협력실', ask:'"지하주차장 전기차 화재 건, 배터리 제조사는 끝까지 비공개입니다. 차량 결함 얘기는 막아주세요."',
-      url:'metube.video/watch?v=parking_fire', h:{channel:'현장기록'}, thumb:'car', thumbAlt:'불이 난 전기차 도트 그림',
+      url:'metube.video/watch?v=parking_fire', art:'evfire', h:{channel:'현장기록'}, thumb:'car', thumbAlt:'불이 난 전기차 도트 그림',
       title:'[현장] 지하주차장 전기차 화재 그 후… 주민들은 아직 집에 못 갔다', S:'한빛 옹호', F:'피해 주민', X:'한빛모터스', Y:'배터리 결함',
       start:28, target:66, turns:12, pay:3000000, budget:1500000, spawn:.5, types:{logic:3,anger:3,sus:1,crowd:2},
       extraNicks:['현장기록','입주자대표','소방관가족'],
@@ -1024,7 +1183,7 @@ const ROUND_POOL = [
   [
     // 모티브: 2025년 대선 직전 불거진 교육단체의 '댓글팀' 의혹 (강사 자격증을 미끼로 수강생 동원)
     { tier:'야당', skin:'news', client:'동글당 지지 단체 「바른엄지 아카데미」 (비공식)', who:'동글당 지지 단체', ask:'"수강생들한테 방과후 강사 자격증 준다고 했더니 다들 열심히 댓글 달아요. 팀 이름은 「엄지군」입니다. 지휘 좀 해주세요."',
-      url:'nemoportal.news/society/20250601', h:{kicker:'사회 | 교육', press:'네모일보 · 김기자 기자'},
+      url:'nemoportal.news/society/20250601', art:'umji', h:{kicker:'사회 | 교육', press:'네모일보 · 김기자 기자'},
       title:'"자격증 줄 테니 댓글 달아라"… 교육단체 댓글팀 의혹', S:'동글당', F:'네모당', X:'동글당', Y:'네모당',
       start:30, target:68, turns:12, pay:10000000, budget:5000000, spawn:.55, types:{logic:2,anger:2,sus:3,crowd:2},
       extraNicks:['시사유튜버','학부모커뮤','네모시민'],
@@ -1043,7 +1202,7 @@ const ROUND_POOL = [
         b:{l:'안 올린다', op:-6, sus:0, karma:0, log:'한 시간 뒤, 다른 계정이 같은 파일을 올렸다.'}} },
     // 모티브: 2025년 정치 유튜버들의 슈퍼챗 수익 구조와 가짜뉴스 확산 논란
     { tier:'야당', skin:'news', client:'동글당 지지 유튜버 연합 「진실채널」', who:'동글당 지지 유튜버들', ask:'"우리 영상이 가짜뉴스라는 기사가 떴어요. 슈퍼챗 끊기면 끝입니다. 기사 댓글 좀 뒤집어 주세요."',
-      url:'nemoportal.news/media/20251120', h:{kicker:'사회 | 미디어', press:'네모일보 · 박기자 기자'},
+      url:'nemoportal.news/media/20251120', art:'streamer', h:{kicker:'사회 | 미디어', press:'네모일보 · 박기자 기자'},
       title:'정치 유튜버 후원 수입 1위 「진실채널」… "분노가 돈이 된다"', S:'동글당', F:'네모당', X:'진실채널', Y:'가짜뉴스 비판',
       start:30, target:68, turns:12, pay:10000000, budget:5000000, spawn:.55, types:{logic:3,anger:2,sus:2,crowd:2},
       extraNicks:['시사유튜버','팩트체커','구독자1004'],
@@ -1062,7 +1221,7 @@ const ROUND_POOL = [
         b:{l:'안 올린다', op:-6, sus:0, karma:0, log:'다음 날, 진실채널 라이브에서 같은 파일이 재생됐다.'}} },
     // 모티브: 2026년 지방선거 경선 '이중 투표 권유 문자' 수사
     { tier:'야당', skin:'news', client:'동글당 경선 캠프 (비공식)', who:'동글당 경선 캠프', ask:'"\'주소 옮겨서 두 번 투표하라\'는 문자가 기사에 났어요. 개인 일탈이라는 쪽으로 정리해 주세요."',
-      url:'nemoportal.news/politics/20260415', h:{kicker:'정치 | 선거', press:'네모일보 · 이기자 기자'},
+      url:'nemoportal.news/politics/20260415', art:'vote', h:{kicker:'정치 | 선거', press:'네모일보 · 이기자 기자'},
       title:'[단독] 동글당 경선, "주소 옮겨 두 번 투표하세요" 문자 돌아', S:'동글당', F:'네모당', X:'동글당 캠프', Y:'이중 투표 의혹',
       start:30, target:68, turns:12, pay:10000000, budget:5000000, spawn:.55, types:{logic:3,anger:2,sus:2,crowd:2},
       extraNicks:['시사유튜버','선관위직원','동글당원'],
@@ -1085,7 +1244,7 @@ const ROUND_POOL = [
   [
     // 모티브: 국가정보기관 심리전단 직원들의 조직적 대선 댓글 사건 (기관장 유죄 확정)
     { tier:'정보기관', skin:'sns', client:'「네모정보원」 심리전단 (존재하지 않는 부서)', who:'국가기관', ask:'"지난번에 동글당 쪽 일 하셨죠? 실력 봤습니다. 우리는 어느 당 편도 아닙니다. 국가를 위할 뿐이죠. 작전비는 특수활동비에서 나갑니다. 출근은 9시, 퇴근은 6시입니다."',
-      url:'jjakjjak.sns/nemo_official/status/2026', h:{name:'네모당 공식', handle:'@nemo_official', tag:'#네모당_역전'},
+      url:'jjakjjak.sns/nemo_official/status/2026', art:'nis', h:{name:'네모당 공식', handle:'@nemo_official', tag:'#네모당_역전'},
       title:'대선 D-3. 최종 토론의 승자는 국민 여러분입니다 🙌 #네모당', S:'네모당', F:'동글당', X:'네모당', Y:'동글당',
       start:30, target:70, turns:12, pay:50000000, budget:20000000, spawn:.6, types:{logic:2,anger:3,sus:3,crowd:2},
       extraNicks:['시사유튜버','팩트체크센터','OO일보기자'],
@@ -1105,7 +1264,7 @@ const ROUND_POOL = [
         b:{l:'안 퍼뜨린다', op:-6, sus:0, karma:0, log:'다음 날 아침 9시 정각, 팀 계정 200개가 같은 보고서를 올렸다.'}} },
     // 모티브: 군 사이버 부대 요원들의 조직적 정치 댓글 사건
     { tier:'정보기관', skin:'sns', client:'「네모군 사이버작전단」 (군사기밀)', who:'군 부대', ask:'"국방 홍보 업무의 일환입니다. 적의 선전에 대응하는 거죠. 대응 대상이 왜 동글당이냐고요? 질문은 받지 않습니다."',
-      url:'jjakjjak.sns/nemo_official/status/2027', h:{name:'네모당 공식', handle:'@nemo_official', tag:'#강한네모'},
+      url:'jjakjjak.sns/nemo_official/status/2027', art:'cyber', h:{name:'네모당 공식', handle:'@nemo_official', tag:'#강한네모'},
       title:'대선 D-7. 안보가 곧 경제입니다. 강한 네모를 만들겠습니다 #네모당', S:'네모당', F:'동글당', X:'네모당', Y:'동글당',
       start:30, target:70, turns:12, pay:50000000, budget:20000000, spawn:.6, types:{logic:2,anger:3,sus:3,crowd:2},
       extraNicks:['예비역병장','국방덕후','OO일보기자'],
@@ -1125,7 +1284,7 @@ const ROUND_POOL = [
         b:{l:'안 퍼뜨린다', op:-6, sus:0, karma:0, log:'저녁 6시 정각 직전, 팀 계정 200개가 같은 보고서를 올렸다.'}} },
     // 모티브: 선거철 해외 세력의 SNS 여론 분열 공작 의혹
     { tier:'정보기관', skin:'sns', client:'정체불명의 해외 정보국 (통역을 거쳐 연락)', who:'해외 정보기관', ask:'"우리는 누가 이기든 상관없습니다. 서로 미워하기만 하면 됩니다. 양쪽 다 화나게 만들어 주세요. 보수는 암호화폐로 드립니다."',
-      url:'jjakjjak.sns/nemo_election/status/2026', h:{name:'네모 선거방송', handle:'@nemo_election', tag:'#통합은_쇼'},
+      url:'jjakjjak.sns/nemo_election/status/2026', art:'foreign', h:{name:'네모 선거방송', handle:'@nemo_election', tag:'#통합은_쇼'},
       title:'대선 D-3. 두 후보가 "선거 후 통합" 공동 선언을 했습니다', S:'갈라치기', F:'통합', X:'갈라치기', Y:'통합 선언',
       start:30, target:70, turns:12, pay:50000000, budget:20000000, spawn:.6, types:{logic:2,anger:3,sus:3,crowd:2},
       extraNicks:['정치중립러','OO일보기자','팩트체크센터'],
@@ -1220,7 +1379,7 @@ const ladder = () => `<div class="ladder">${ROUNDS.map((d,i)=>`<div class="${i<S
 function screenTitle(){
   FRIEND = rollFriend();
   $('#app').innerHTML = `
-  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.9.1</span></div>
+  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.9.2</span></div>
   <div class="body stack">
     <h1>키보드<br>하이랜더</h1>
     <canvas class="sprite" id="hero" aria-label="모니터 앞에 앉은 알바생 도트 그림"></canvas>

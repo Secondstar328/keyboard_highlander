@@ -54,6 +54,10 @@
 
 ![갤러리 첨부 이미지 5종](docs/screenshots/gallery-art.png)
 
+2~7단계도 주제마다 그림이 하나씩 있어요.
+
+![주제별 도트 그림 18종](docs/screenshots/topic-art.png)
+
 ## 플랫폼 전용 행동
 
 게시판마다 하나씩 있고, 무료지만 한 번 쓰면 3턴을 기다려야 해요.
