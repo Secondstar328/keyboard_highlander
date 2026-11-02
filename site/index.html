@@ -1398,10 +1398,10 @@ function screenTitle(){
   <div class="body stack">
     <h1>키보드<br>하이랜더</h1>
     <canvas class="sprite" id="hero" aria-label="모니터 앞에 앉은 알바생 도트 그림"></canvas>
-    <p>시급 9,860원짜리 인생에 지친 당신. 오래 알던 고닉에게서 DM이 왔다.</p>
-    <div class="memo"><span class="k">${esc(FRIEND)}의 DM</span>
+    <p>시급 9,860원짜리 인생에 지친 당신. 오래 알던 고닉이 내 갤로그에 비밀 댓글을 남겼다.</p>
+    <div class="memo"><span class="k">🔒 ${esc(FRIEND)}의 갤로그 비밀 댓글</span>
       <span class="big">"ㅎㅇ 지금 갤 보고 있음? 댓글 좀 같이 달아줄 사람 구함. 밥 삼 ㄹㅇ"</span></div>
-    <div class="row"><button class="btn" id="go">DM 답장하기</button><button class="btn alt" id="how">하는 법</button></div>
+    <div class="row"><button class="btn" id="go">답장하기</button><button class="btn alt" id="how">하는 법</button></div>
   </div></div>`;
   drawHero($('#hero'));
   $('#go').onclick = () => { newGame(); screenBrief(); };
@@ -1763,7 +1763,7 @@ function screenLevelUp(){
     ${ladder()}
     <p>소문이 났다. 이번엔 <b>${esc(d.tier)}</b>에서 연락이 왔다.</p>
     ${nu.length ? `<p class="dim">새로 쓸 수 있는 도구</p><div class="unlock">${nu.map(t=>`<div><b>${t.icon} ${t.name}</b><span>${esc(t.desc)}</span><span class="cash">${won(t.cost)}</span></div>`).join('')}</div>` : ''}
-    <div class="row"><button class="btn" id="go">DM 확인</button></div>
+    <div class="row"><button class="btn" id="go">의뢰 확인</button></div>
   </div></div>`;
   $('#go').onclick = screenBrief;
 }
@@ -1772,13 +1772,13 @@ function screenEnding(kind){
   const st = S.st;
   const lines = kind === 'banned' ? [
     '모든 계정이 정지됐다.',
-    '다음 날, 같은 DM이 다른 사람에게 갔다.',
+    '다음 날, 같은 의뢰가 다른 사람에게 갔다.',
     '그 사람은 당신보다 건당 500원 싸게 일하기로 했다.',
     '게시판은 아무 일 없었다는 듯 계속 싸우고 있었다.',
   ] : kind === 'fired' ? [
     '같은 의뢰를 두 번 망쳤다.',
     '업계에 소문이 났다. "그 사람 요즘 감 떨어졌대."',
-    'DM이 더 이상 오지 않는다.',
+    '의뢰 연락이 더 이상 오지 않는다.',
     '대신 당신이 쓰던 닉네임으로 누군가 계속 댓글을 달고 있다.',
   ] : [
     `${ROUNDS[0].payNote}에서 시작해 ${won(S.money)}을 벌었다.`,
@@ -1815,7 +1815,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.9.5';
+const VERSION = '0.9.6';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},
