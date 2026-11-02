@@ -1791,10 +1791,11 @@ function showFamily(){
     <div class="fbody">
       <div class="fday">오늘</div>
       <div class="fmsg"><span class="who">엄마</span><div class="fwd"><span>↪ 전달된 메시지</span><p>${esc(quote)}</p></div></div>
-      <div class="fmsg"><span class="who">엄마</span><div class="bub">이거 진짜래? 너도 조심해라</div></div>
-      <div class="fmsg"><span class="who">아빠</span><div class="bub">요즘 인터넷 보면 다 맞는 말이더라</div></div>
+      <div class="fmsg"><span class="who">엄마</span><div class="bub">이거.진짜래??너도.조심하거라..^^</div></div>
+      <div class="fmsg"><span class="who">아빠</span><div class="bub">요즘.인터넷.보면.다맞는말이더라.</div></div>
+      <div class="fmsg"><span class="who">아빠</span><div class="bub">${pick(['네모.당','동글.당'])} 알밥들이많다.조심하거라..!</div></div>
       <div class="fmsg"><span class="who">동생</span><div class="bub">ㅋㅋ 이런 거 다 알바가 쓰는 거임</div></div>
-      <div class="fmsg"><span class="who">엄마</span><div class="bub">얘는 무슨~ 벌써 공감이 3천 개야</div></div>
+      <div class="fmsg"><span class="who">엄마</span><div class="bub">얘는.무슨~~ 벌써.공감이 3천개야..^^;;</div></div>
       <div class="fnote">${crossed.includes(st) ? `${ago}달 전, 당신이 직접 퍼뜨린 이야기다.` : `${ago}달 전 당신이 쓴 문장에서 시작된 이야기다. 중간에 누군가 살을 붙였다.<br><span class="orig">당신이 쓴 원래 문장: "${esc(mine)}"</span>`}</div>
     </div>
     <div class="fbtns"><button class="btn alt" id="fa">읽음 표시만 남긴다</button><button class="btn" id="fb">"응, 맞대"라고 보낸다</button></div>
@@ -1967,7 +1968,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.11.1';
+const VERSION = '0.11.2';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},
