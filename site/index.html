@@ -4,14 +4,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=JetBrains+Mono:wght@400;700&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Gothic+Coding:wght@400;700&family=Press+Start+2P&display=swap">
 <style>
+/* 갈무리(Galmuri) by Minseo Lee — SIL Open Font License 1.1 (fonts/LICENSE-Galmuri.md). 게임에 나오는 글자만 골라 담은 파일 */
+@font-face{font-family:"GalmuriMono11";src:url("fonts/GalmuriMono11.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"Galmuri11";src:url("fonts/Galmuri11.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"Galmuri11 Bold";src:url("fonts/Galmuri11-Bold.woff2") format("woff2");font-display:swap}
 /* Layout: 내 작업대 = 마크다운 에디터(탭·줄번호·프론트매터). 그 사이에 끼는 게시판 창만 의뢰별 플랫폼 스킨. */
 :root{
   --bg:#1b1b1f; --pane:#232328; --tab:#17171b; --line:#34343b; --ink:#dcdde2; --dim:#868995; --head:#f3f4f8;
   --acc:#a58bff; --str:#e6b673; --key:#7fd1b9; --warn:#f2777a; --ok:#9fd38a; --cm:#6f8f6c;
   --hi:var(--acc); --foe:#7fb7ff; --cash:var(--str);
-  --f-title:"Black Han Sans","Nanum Gothic Coding",sans-serif;
-  --f-body:"JetBrains Mono","Nanum Gothic Coding",ui-monospace,monospace;
-  --f-num:"JetBrains Mono","Nanum Gothic Coding",ui-monospace,monospace;
+  /* 내 세계(제목·작업대·선택지·엔딩)는 한글 도트 폰트 갈무리. 게시판·가족 단톡방은 진짜 웹처럼 일반 고딕 그대로.
+     갈무리 파일이 없는 곳(claude.ai 아티팩트)에서는 뒤의 폰트로 자동 대체 */
+  --f-title:"Galmuri11 Bold","Black Han Sans","Nanum Gothic Coding",sans-serif;
+  --f-body:"GalmuriMono11","JetBrains Mono","Nanum Gothic Coding",ui-monospace,monospace;
+  --f-num:"GalmuriMono11","JetBrains Mono","Nanum Gothic Coding",ui-monospace,monospace;
   color-scheme:dark;
 }
 html,body{height:100%}
@@ -312,6 +318,8 @@ canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;b
 .fbtns .btn::before{content:""}
 .fbtns .btn.alt{background:#ffffff99;color:#333}
 
+.credit{font-size:11px;color:var(--dim)}
+
 /* 엔딩 리뷰 */
 .survey{display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);border-radius:8px;padding:14px;background:#ffffff06}
 .survey h2{font-size:17px}
@@ -485,7 +493,7 @@ const josa = (w, a, b) => { const c = w.charCodeAt(w.length-1); return w + (c >=
 const ART_W = 64, ART_H = 40, ART_S = 4;
 function artKit(g){
   const r = (x,y,w,h,c) => { g.fillStyle = c; g.fillRect(x*ART_S, y*ART_S, w*ART_S, h*ART_S); };
-  const t = (s,x,y,c,size=8) => { g.fillStyle = c; g.font = `${size}px "Press Start 2P", monospace`; g.textBaseline = 'top'; g.fillText(s, x*ART_S, y*ART_S); };
+  const t = (s,x,y,c,size=8) => { g.fillStyle = c; g.font = `${size}px "GalmuriMono11", "Press Start 2P", monospace`; g.textBaseline = 'top'; g.fillText(s, x*ART_S, y*ART_S); };
   const ln = (pts,c) => { for (let i=0;i<pts.length-1;i++){ let [x0,y0] = pts[i]; const [x1,y1] = pts[i+1];
       const dx = Math.abs(x1-x0), dy = -Math.abs(y1-y0), sx = x0<x1?1:-1, sy = y0<y1?1:-1; let e = dx+dy;
       for(;;){ r(x0,y0,1,1,c); if (x0===x1 && y0===y1) break; const e2 = 2*e; if (e2>=dy){ e+=dy; x0+=sx; } if (e2<=dx){ e+=dx; y0+=sy; } } } };
@@ -1478,6 +1486,7 @@ function screenTitle(){
     <div class="memo"><span class="k">🔒 ${esc(FRIEND)}의 갤로그 비밀 댓글</span>
       <span class="big">"ㅎㅇ 지금 갤 보고 있음? 댓글 좀 같이 달아줄 사람 구함. 밥 삼 ㄹㅇ"</span></div>
     <div class="row"><button class="btn" id="go">답장하기</button><button class="btn alt" id="how">하는 법</button></div>
+    <p class="credit">// 폰트: 갈무리 (SIL OFL) · 모든 회사·단체·정당·인물은 가상입니다</p>
   </div></div>`;
   drawHero($('#hero'));
   $('#go').onclick = () => { newGame(); screenBrief(); };
@@ -1972,7 +1981,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.12';
+const VERSION = '0.13';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},

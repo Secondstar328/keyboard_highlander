@@ -7,6 +7,8 @@
 - GitHub Pages는 꺼져 있다 (2026-11-02). 게임 주소는 Cloudflare Pages 하나뿐.
 - 개발 문서(CLAUDE.md, CHANGELOG.md, docs/)는 `site/` 밖에 둬서 공개되지 않게 한다.
 - `site/index.html` 첫 줄은 문서 머리말(doctype, charset, viewport)이다. 지우지 않는다. claude.ai 아티팩트로 올릴 때만 이 첫 줄을 뺀 사본을 쓴다.
+- 폰트: 제목·작업대는 갈무리(`site/fonts/*.woff2`, 게임에 나오는 글자만 담은 부분 파일). **새 한글 문장을 추가하면 폰트를 다시 만들어야** 새 글자가 도트로 나온다 (안 하면 그 글자만 대체 폰트로 보임). 다시 만드는 법: galmuri 패키지(npm)의 ttf를 `pyftsubset 원본.ttf --text-file=글자목록 --flavor=woff2 --layout-features='*'`로, 글자 목록은 site/index.html의 모든 글자 + 영문·숫자·기호
+- 게시판(`.board`)과 가족 단톡방은 진짜 웹처럼 일반 고딕을 쓴다 (도트 폰트 적용하지 않음)
 - 리뷰 저장: `functions/api/review.js` (Cloudflare Pages Functions). KV 바인딩 `REVIEWS`, 비밀 변수 `ADMIN_KEY` 필요. 확인 페이지 `site/reviews.html`.
 
 ## 구조 (site/index.html 안)
