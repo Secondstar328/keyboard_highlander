@@ -686,7 +686,8 @@ const SKINS = {
     stat:()=>`실시간 트렌드 ${esc(ROUNDS[S.r].h.tag)} ${Math.max(1, Math.round(40 - S.op/2.5))}위`, meta:()=>`💬 ${R(0,40)} · 🔁 ${R(0,300)} · ♥ ${R(0,999)}`},
 };
 function abar(v, t){ const n = 20, f = Math.round(v/100*n), m = t==null ? -1 : Math.min(n-1, Math.round(t/100*n)); let o = ''; for (let i=0;i<n;i++) o += i===m ? '┃' : i<f ? '█' : '░'; return o; }
-const nickHtml = n => SK().nick ? SK().nick(n) : esc(n);
+// 갤러리 밖에서는 유동 IP 닉(ㅇㅇ(118.235))을 '익명'으로 보여줌
+const nickHtml = n => SK().nick ? SK().nick(n) : esc(/^ㅇㅇ\(\d+\.\d+\)$/.test(n) ? '익명' : n);
 const SK = () => SKINS[ROUNDS[S.r].skin];
 function renderBoard(d){
   const k = SKINS[d.skin];
@@ -851,7 +852,8 @@ const PERSONAS = [
 ];
 const BOT_PERSONA = {nick:'Kim_Minsu', tone:'번역체', pre:['나는 생각한다, ','정말로 '], suf:[' 이것은 사실입니다.',' 좋은 하루 되세요.',' 감사합니다 친구.']};
 const BOT_NAMES = ['Kim_Minsu','Lee_Jiwoo88','Park.Seoyeon','Choi_Real_Korean','Jung_Hoon_1990','Kang_Nara77'];
-const FOE_NICKS = ['ㅇㅇ(39.7)','반박장인','팩트체커','눈팅10년차','현생사는사람','ㅇㅇ(175.223)','논리왕','깨어있음','고인물','퇴근하고싶다','ㅇㅇ(223.38)','갤고인물'];
+// 상대 닉 (모든 플랫폼 공용, 갤러리풍 닉 제외. 갤러리는 스킨의 foeNick이 유동 IP 닉을 따로 만듦)
+const FOE_NICKS = ['반박장인','팩트체커','눈팅10년차','현생사는사람','논리왕','깨어있음','고인물','퇴근하고싶다','지나가던행인','새벽감성','월급루팡','동네토박이'];
 
 /* ---------- 의뢰 7단계: 친구 고닉 → 정보기관 (각 의뢰는 실제 논란을 가상 이름으로 각색) ---------- */
 const ROUND_POOL = [
@@ -1332,10 +1334,11 @@ const EVENTS = [
 
 /* ---------- 난이도 숫자 (여기만 고치면 전체 난이도가 바뀜) ---------- */
 const BAL = {
-  spawnMul: 2.6, spawnAdd: 0.35,   // 턴당 새 상대 댓글 수 = 의뢰 spawn × spawnMul + spawnAdd (소수점은 확률)
+  spawnMul: 2.2, spawnAdd: 0.35,   // 턴당 새 상대 댓글 수 = 의뢰 spawn × spawnMul + spawnAdd (소수점은 확률)
   maxOpen: 6,                      // 게시판에 동시에 떠 있을 수 있는 상대 댓글 수
   strongMul: 1.5,                  // 상성 정답일 때 여론 상승 배수 (예전엔 2)
-  susPerStage: 1,                  // 단계가 오를수록 답글 하나당 의심도 추가
+  pileOn: 0.35,                    // 역효과 때 구경꾼 댓글이 붙을 확률
+  susPerStage: 0.5,                  // 단계가 오를수록 답글 하나당 의심도 추가
 };
 
 /* ---------- 상태 ---------- */
@@ -1379,7 +1382,7 @@ const ladder = () => `<div class="ladder">${ROUNDS.map((d,i)=>`<div class="${i<S
 function screenTitle(){
   FRIEND = rollFriend();
   $('#app').innerHTML = `
-  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.9.3</span></div>
+  <div class="win"><div class="bar"><span>README.md</span><span class="num">v0.9.4</span></div>
   <div class="body stack">
     <h1>키보드<br>하이랜더</h1>
     <canvas class="sprite" id="hero" aria-label="모니터 앞에 앉은 알바생 도트 그림"></canvas>
@@ -1477,15 +1480,22 @@ function startRound(){
   $('#skinact').onclick = useSkinAct;
   const gi = $('#gimg'); if (gi && ART[d.art]){ const draw = () => ART[d.art](gi.getContext('2d')); draw(); document.fonts?.ready.then(draw); }
   const thk = d.thumb || SK().thumb, th = $('#thumb'); if (th && thk) drawPix(th, PIX[thk].rows, PIX[thk].pal);
-  spawnFoe(); spawnFoe(); spawnFoe();
+  S.quiet = true; spawnFoe(); spawnFoe(); spawnFoe();
   autoAcc(); hud();
 }
 
+// 우리가 활동한 뒤에야 나올 수 있는 말 (알바·쉴드·감싸기·계정 의심 등). 시작할 때 깔리는 댓글에는 안 씀
+const REACTIVE = /알바|쉴드|감싸|옹호|편드|편 드|계정|가입|IP|아이피|말투|부계|관계자|업자|찬양|칭찬 댓글|추천 수|공감 수|출근|퇴근|9시|6시|매뉴얼|리뷰 테러|별점 테러|리뷰 쓴|리뷰들|댓글들|몰려|홍보팀|대기 타/;
+function openingLine(type){
+  for (let i = 0; i < 12; i++){ const t = B.foe[type].next(); if (!REACTIVE.test(t)) return t; }
+  return null;
+}
 function spawnFoe(forceType, forceText){
   const d = ROUNDS[S.r];
   if (S.open.length >= BAL.maxOpen) return;
   const pool = []; for (const k in d.types) for (let i=0;i<d.types[k];i++) pool.push(k);
   const type = forceType || pick(pool);
+  if (!forceText && S.quiet){ if (type === 'sus') return spawnFoe(pick(pool.filter(k=>k!=='sus')) || 'logic'); forceText = openingLine(type); if (!forceText) return spawnFoe(type === 'logic' ? 'crowd' : 'logic'); }
   const f = {id:++S.fid, type, hp:2, nick:(SK().foeNick && SK().foeNick()) || B.nicks.next()};
   const el = document.createElement('div');
   el.className = 'c foe open'; el.tabIndex = 0; el.setAttribute('role','button');
@@ -1565,7 +1575,7 @@ function reply(t){
   if (m === 0){
     S.op -= 4; S.sus += T.sus + 6; S.st.back++;
     addReply(f, f.nick, B.rep[f.type][t].next(), 'foe');
-    if (Math.random() < .5) spawnFoe('crowd', B.rep.pile.next());
+    if (Math.random() < BAL.pileOn) spawnFoe('crowd', B.rep.pile.next());
     line('sys', `역효과! ${FT[f.type].name}한테 ${T.name}은 안 먹힌다.`);
   } else {
     f.hp -= m; S.op += T.op * (m === 2 ? BAL.strongMul : 1); S.sus += T.sus + S.r * BAL.susPerStage;
@@ -1638,6 +1648,7 @@ function useTool(id){
 
 function endTurn(){
   const d = ROUNDS[S.r];
+  S.quiet = false;
   S.busy = true; hud();
   setTimeout(()=>{
     S.open.forEach(f => { S.op -= FT[f.type].drain; if (f.type==='sus') S.sus += 3; });
