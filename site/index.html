@@ -84,6 +84,21 @@ canvas.sprite{image-rendering:pixelated;width:160px;max-width:100%;height:auto;b
 .ladder .now{background:var(--acc);color:var(--bg);font-weight:700}
 
 /* 프론트매터 HUD */
+.prog{flex-wrap:nowrap!important;white-space:nowrap}
+.prog code{overflow:hidden;min-width:0;flex:0 1 auto}
+.prog>span:first-child{min-width:5.5em!important;overflow:hidden;text-overflow:ellipsis}
+.mini{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px}
+.mini span{white-space:nowrap} .mini b{color:var(--head)}
+.toasts{display:flex;flex-direction:column;gap:4px}
+.toast{font-size:13px;padding:6px 8px;border-left:4px solid #e0464f;background:#ffffff0a;border-radius:3px;color:var(--ink)}
+.toast.evt{border-left-color:#f5a500} .toast.buy{border-left-color:#2e9e5b}
+.toast.old{opacity:.55;font-size:12px}
+.ggrid.tools{grid-template-columns:repeat(3,1fr);gap:6px}
+.ggrid.tools .tile{padding:8px;gap:4px}
+.ggrid.tools .tile .ic{width:30px;height:30px;font-size:17px}
+.ggrid.tools .tile .nm{font-size:12px}
+.ggrid.tools:not(.showfx) .fxs{display:none}
+.fxbtn{font-size:12px;padding:2px 8px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--dim)}
 .fm{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0 18px;font-size:13px}
 .fm .cm{grid-column:1/-1;color:var(--dim)}
 .prog{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px}
@@ -1565,18 +1580,11 @@ function startRound(){
   $('#app').innerHTML = `
   <div class="win" id="hudwin"><div class="bar"><span>의뢰_0${S.r+1}.md</span><span class="ghost">작업일지.md</span><span>Lv.${level()}</span></div>
     <div class="body stack">
-      <div class="fm"><span class="cm">---</span>
-        <div><span class="key">client:</span> <span class="str">"${esc(d.client)}"</span></div>
-        <div><span class="key">turns_left:</span> <b id="turns"></b></div>
-        <div><span class="key">budget:</span> <span class="str" id="budget"></span></div>
-        <div><span class="key">wallet:</span> <span class="str" id="money"></span></div>
-        <div><span class="key">accounts:</span> <b id="accn"></b></div>
-        <div><span class="key">online:</span> <span id="users"></span></div>
-        <span class="cm">---</span></div>
-      <div class="prog"><span>${esc(d.S)}</span><code id="opbar"></code><b id="opv"></b><span class="cmt">// 목표 ${d.target}% (┃)</span></div>
-      <div class="prog"><span>의심도</span><code class="w" id="susbar"></code><b id="susv"></b><span class="cmt">// 100이면 계정 정지</span></div>
-      <div class="cmt">// 미답변 댓글 <span id="drain"></span></div>
+      <div class="mini"><span>⏳ <b id="turns"></b>턴</span><span>💰 작전비 <b id="budget"></b></span><span>👤 계정 <b id="accn"></b></span><span>📉 미답변 <b id="drain"></b></span></div>
+      <div class="prog"><span>${esc(d.S)}</span><code id="opbar"></code><b id="opv"></b><span class="cmt">/ ${d.target}%</span></div>
+      <div class="prog"><span>의심도</span><code class="w" id="susbar"></code><b id="susv"></b></div>
       <div class="buffs" id="buffs"></div>
+      <div class="toasts" id="toasts"></div>
       <button class="btn settle" id="settle" hidden>✅ 목표 달성 — 지금 정산하기 <small></small></button>
     </div></div>
   ${renderBoard(d)}
@@ -1584,16 +1592,15 @@ function startRound(){
     <div class="body stack">
       <h3>계정</h3>
       <div class="chips" id="chips"></div>
-      <div class="hrow"><h3>대응</h3><span class="cmt">// 상대 댓글 유형에 맞춰 고르기</span></div>
+      <div class="hrow"><h3>대응</h3></div>
       <div id="tgt"></div>
       <div class="tgrid">${Object.keys(TACTICS).map(k=>{ const T = TACTICS[k];
-        const strong = Object.keys(FT).filter(x=>T.vs[x]===2).map(x=>[FT[x].icon+' 강함',1]);
-        const weak = Object.keys(FT).filter(x=>T.vs[x]===0).map(x=>[FT[x].icon+' 역효과',0]);
-        return `<button class="tile tac" data-t="${k}"><span class="ic" style="background:${TAC_BG[k]}">${T.icon}</span><span class="nm">${T.name}</span><span class="fxs">${strong.concat(weak).map(chip).join('')}</span><span class="badge"></span></button>`; }).join('')}</div>
+        const strong = Object.keys(FT).filter(x=>T.vs[x]===2).map(x=>[FT[x].icon+'에 강함',1]);
+        return `<button class="tile tac" data-t="${k}"><span class="ic" style="background:${TAC_BG[k]}">${T.icon}</span><span class="nm">${T.name}</span><span class="fxs">${strong.map(chip).join('')}</span><span class="badge"></span></button>`; }).join('')}</div>
       <div class="hrow"><h3>${esc(SK().name)} 전용</h3><span class="cmt">// 무료 · 쓰고 나면 ${SKIN_CD}턴 쿨타임</span></div>
       <div class="ggrid">${(() => { const a = SKIN_ACTS[d.skin]; return `<button class="tile tool skinact" id="skinact"><span class="ic">${a.icon}</span><span class="nm">${a.name}</span><span class="fxs">${a.fx.map(chip).join('')}</span><span class="price" id="skincd">사용 가능</span></button>`; })()}</div>
-      <div class="hrow"><h3>도구</h3><span class="cmt">// 💰는 작전비에서 차감</span></div>
-      <div class="ggrid" id="tools">${TOOLS.filter(t=>t.lv<=level()).map(t=>`<button class="tile tool ${t.cost?'paid':''}" data-g="${t.id}"><span class="ic">${t.icon}</span><span class="nm">${t.name}</span><span class="fxs">${TOOL_FX[t.id].map(chip).join('')}</span>${t.cost?`<span class="price">💰 ${won(t.cost)}</span>`:'<span class="price free">무료</span>'}</button>`).join('')}</div>
+      <div class="hrow"><h3>도구</h3><button class="fxbtn" id="fxbtn" aria-pressed="false">효과 보기</button></div>
+      <div class="ggrid tools" id="tools">${TOOLS.filter(t=>t.lv<=level()).map(t=>`<button class="tile tool ${t.cost?'paid':''}" data-g="${t.id}" title="${esc(t.desc)}"><span class="ic">${t.icon}</span><span class="nm">${t.name}</span><span class="fxs">${TOOL_FX[t.id].map(chip).join('')}</span>${t.cost?`<span class="price">💰 ${won(t.cost)}</span>`:'<span class="price free">무료</span>'}</button>`).join('')}</div>
       ${(() => { const lk = TOOLS.filter(t=>t.lv>level()); if (!lk.length) return '<p class="cmt">// 모든 도구 해금 완료</p>';
         const nl = lk[0].lv; return `<div class="lockrow"><span class="lk">🔒 잠긴 도구 ${lk.length}개</span><span>다음 해금 <b>Lv.${nl}</b>: ${lk.filter(t=>t.lv===nl).map(t=>t.icon+' '+t.name).join(', ')}</span></div>`; })()}
     </div></div>
@@ -1602,6 +1609,7 @@ function startRound(){
   document.querySelectorAll('[data-g]').forEach(b => b.onclick = () => useTool(b.dataset.g));
   $('#skinact').onclick = useSkinAct;
   $('#settle').onclick = settleEarly;
+  $('#fxbtn').onclick = () => { const on = $('#tools').classList.toggle('showfx'); $('#fxbtn').textContent = on ? '효과 숨기기' : '효과 보기'; $('#fxbtn').setAttribute('aria-pressed', on); };
   const gi = $('#gimg'); if (gi && ART[d.art]){ const draw = () => ART[d.art](gi.getContext('2d')); draw(); document.fonts?.ready.then(draw); }
   const thk = d.thumb || SK().thumb, th = $('#thumb'); if (th && thk) drawPix(th, PIX[thk].rows, PIX[thk].pal);
   S.quiet = true; spawnFoe(); spawnFoe(); spawnFoe();
@@ -1632,7 +1640,13 @@ function spawnFoe(forceType, forceText){
 }
 function drawHp(f){ f.el.querySelector('.hp').textContent = '■'.repeat(Math.max(0,f.hp)); }
 function feedAdd(el){ const fd = $('#feed'); if (!fd) return; fd.appendChild(el); fd.scrollTop = fd.scrollHeight; }
-function line(cls, text){ const el = document.createElement('div'); el.className = 'c ' + cls; el.innerHTML = `<div class="x">${esc(text)}</div>`; feedAdd(el); }
+// 알림(이벤트·구매·경고)은 게시판 사이가 아니라 상태창 아래 알림 칸에. 최근 2개만 보임
+function line(cls, text){
+  const box = $('#toasts'); if (!box) return;
+  const el = document.createElement('div'); el.className = 'toast ' + cls; el.textContent = text;
+  box.prepend(el); while (box.children.length > 2) box.lastChild.remove();
+  [...box.children].forEach((c, i) => c.classList.toggle('old', i > 0));
+}
 function commentEl(nick, text, side){
   const el = document.createElement('div'); el.className = 'c ' + side;
   el.innerHTML = `<img alt="" src="${avatar(nick,side)}"><div class="x"><div class="n">${nickHtml(nick)}</div><div class="t">${esc(text)}</div><div class="meta">${SK().meta(side)}</div></div>`;
@@ -1662,21 +1676,19 @@ function hud(){
   $('#opbar').textContent = abar(S.op, d.target);
   $('#susbar').textContent = abar(S.sus);
   $('#stline').textContent = `Ln ${S.turn+1}, Col ${S.st.actions+1} · 의뢰 ${S.r+1}/${ROUNDS.length}`;
-  $('#susv').textContent = Math.round(S.sus) + ' / 100';
+  $('#susv').textContent = Math.round(S.sus) + '/100';
   $('#turns').textContent = d.turns - S.turn;
-  $('#money').textContent = won(S.money);
   $('#budget').textContent = d.budget ? won(S.budget) : '없음';
-  $('#users').textContent = users().toLocaleString() + '명';
   const bs = $('#bstat'); if (bs) bs.innerHTML = SK().stat();
   $('#ccount').textContent = document.querySelectorAll('#feed .c.me, #feed .c.foe').length;
-  $('#drain').textContent = S.open.length + '개 · 턴당 -' + S.open.reduce((s,f)=>s+FT[f.type].drain,0) + '%';
+  $('#drain').textContent = S.open.length + '개 (턴당 -' + S.open.reduce((s,f)=>s+FT[f.type].drain,0) + '%)';
   $('#buffs').innerHTML = S.buffs.map(b=>`<span>${b.label || '📹 바이럴 진행 중'} +${b.op}%/턴 · ${b.n}턴</span>`).join('') + (S.shield ? `<span>🔑 정지 면제 ${S.shield}턴</span>` : '');
   $('#accn').textContent = S.accs.length;
   $('#chips').innerHTML = S.accs.map((a,i)=>`<button class="chip ${i===S.acc?'on':''}" data-i="${i}"><img alt="" src="${avatar(a.nick,'me')}">@${esc(a.nick)} <small>#${esc(a.tone)}</small>${a.used===S.turn-1?'<small class="hot">방금 씀</small>':''}</button>`).join('');
   document.querySelectorAll('.chip').forEach(c => c.onclick = () => { S.acc = +c.dataset.i; hud(); });
   const f = S.open.find(x=>x.id===S.sel);
   $('#tgt').className = f ? 'tgt on' : 'tgt';
-  $('#tgt').innerHTML = f ? `🎯 대상 <b>@${esc(f.nick)}</b> <span class="tag2">${FT[f.type].icon} ${FT[f.type].name}</span> <span class="cmt">${S.r <= BAL.badgeUntil ? '// 초록 타일이 정답' : '// 타일의 상성 칩을 보고 직접 고르기'}</span>` : '👆 게시판에서 <b>상대 댓글</b>을 눌러 대상을 고르세요';
+  $('#tgt').innerHTML = f ? `🎯 대상 <b>@${esc(f.nick)}</b> <span class="tag2">${FT[f.type].icon} ${FT[f.type].name}</span> <span class="cmt">${S.r <= BAL.badgeUntil ? '// 초록 타일이 정답' : '// 이 유형에 강한 대응을 고르기'}</span>` : '👆 게시판에서 <b>상대 댓글</b>을 눌러 대상을 고르세요';
   document.querySelectorAll('[data-t]').forEach(b => { const v = f ? TACTICS[b.dataset.t].vs[f.type] : -1;
     const hint = S.r <= BAL.badgeUntil;
     b.disabled = !f || S.busy; b.classList.toggle('good', hint && v===2); b.classList.toggle('bad', hint && v===0);
@@ -2036,7 +2048,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.16';
+const VERSION = '0.17';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},
