@@ -58,6 +58,7 @@ code,.code{font-family:var(--f-body);background:#ffffff0d;padding:0 4px;border-r
 button{font:inherit;color:inherit;cursor:pointer}
 .btn.settle{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:var(--acc);color:var(--bg);border-color:var(--acc);text-align:left}
 .btn.settle[hidden]{display:none}
+.btn.settle.wait{background:transparent;color:var(--acc);opacity:1!important;cursor:default}
 .btn.settle small{font-weight:400;font-size:12px;opacity:.85}
 .btn{background:transparent;color:var(--acc);border:1px solid var(--acc);border-radius:4px;font-weight:700;padding:8px 14px;font-size:14px}
 .btn::before{content:"▶ "}
@@ -1454,7 +1455,7 @@ const EVENTS = [
 ];
 
 /* ---------- 난이도 숫자 (여기만 고치면 전체 난이도가 바뀜) ---------- */
-const BAL = { pressMax:2, keepBudget:0.5,
+const BAL = { holdTurns:2, pressMax:2, keepBudget:0.5,
   spawnMul: 2.2, spawnAdd: 0.35,   // 턴당 새 상대 댓글 수 = 의뢰 spawn × spawnMul + spawnAdd (소수점은 확률)
   maxOpen: 6,                      // 게시판에 동시에 떠 있을 수 있는 상대 댓글 수
   strongMul: 1.5,                  // 상성 정답일 때 여론 상승 배수 (예전엔 2)
@@ -1537,7 +1538,7 @@ function screenHow(){
     </div>
     <p>3. 부계정마다 <b>말투</b>가 다릅니다. 같은 계정을 연달아 쓰면 의심받아요.</p>
     <p>4. 의뢰를 성공하면 <b>레벨 업</b>. 더 큰 의뢰인이 찾아오고, 새 도구가 열립니다. 돈 드는 도구는 의뢰인이 준 <b>작전비</b>에서만 빠지고(내 지갑 돈은 못 씀), 남은 작전비는 절반만 당신 몫이에요(나머지는 반납). 비싼 도구는 의뢰당 한 번만 쓸 수 있어요.</p>
-    <p>+ 선택 장면이 지나고 목표를 넘겼다면 <b>지금 정산하기</b>로 일찍 끝낼 수 있어요. 남은 턴만큼 보너스가 붙어요.</p>
+    <p>+ 선택 장면이 지나고 목표를 넘긴 채로 <b>2턴을 버티면</b>(여론 굳히기) <b>지금 정산하기</b>로 일찍 끝낼 수 있어요. 남은 턴만큼 보너스가 붙어요.</p>
     <p>+ 다음 의뢰로 넘어갈 때마다 <b>청구서</b>가 와요. 많이 벌수록 씀씀이도 커져요.</p>
     <p>+ 게시판마다 <b>그 플랫폼 전용 행동</b>이 하나씩 있어요(념글 보내기, 별점 1점 테러, 싫어요 폭격 등). 무료지만 턴을 하나 쓰고, 한 번 쓰면 3턴을 기다려야 해요.</p>
     <p>5. 의심도가 100이 되면 방금 쓴 계정이 정지됩니다. 계정이 0개가 되거나 같은 의뢰를 두 번 연속 망치면 끝.</p>
@@ -1574,7 +1575,7 @@ function startRound(){
   makeBags();
   S.op = d.start; S.sus = Math.max(0, S.sus - 30); S.turn = 0; S.busy = false; S.open = []; S.sel = null;
   S.budget = d.budget; S.buffs = []; S.shield = 0; S.skcd = 0; S.echo = []; S.altTurn = -1; S.attemptBonus = 0;
-  S.usedOnce = []; S.early = 0; S.accs.forEach(a => a.used = -99);
+  S.usedOnce = []; S.early = 0; S.hold = 0; S.accs.forEach(a => a.used = -99);
   // 선택 장면에 이름이 나오는 상대 고닉을 시작 댓글에 미리 깔아 둠
   { const m = /「([^」]+)」/.exec(d.dilemma?.t || ''); S.forceNick = m && (d.extraNicks||[]).includes(m[1]) ? m[1] : null; }
   $('#app').innerHTML = `
@@ -1585,7 +1586,7 @@ function startRound(){
       <div class="prog"><span>의심도</span><code class="w" id="susbar"></code><b id="susv"></b></div>
       <div class="buffs" id="buffs"></div>
       <div class="toasts" id="toasts"></div>
-      <button class="btn settle" id="settle" hidden>✅ 목표 달성 — 지금 정산하기 <small></small></button>
+      <button class="btn settle" id="settle" hidden>✅ 지금 정산하기 <small></small></button>
     </div></div>
   ${renderBoard(d)}
   <div class="win"><div class="bar"><span>actions.md</span></div>
@@ -1698,8 +1699,12 @@ function hud(){
     b.disabled = S.busy || t.lv>level() || poor || spent || (t.id === 'alt' && S.altTurn === S.turn); b.classList.toggle('poor', poor || spent);
     if (t.cost) b.querySelector('.price').textContent = spent ? '✔ 이번 의뢰에서 사용함' : poor ? '💸 작전비 부족' : '💰 ' + won(t.cost); });
   // 선택 장면이 지나고 목표를 넘겼으면 일찍 정산 가능
-  const se = $('#settle'); if (se){ const ok = S.op >= d.target && S.turn >= 6 && S.turn < d.turns;
-    se.hidden = !ok; se.disabled = S.busy; if (ok) se.querySelector('small').textContent = `남은 ${d.turns - S.turn}턴 × 보수 5% = +${won(earlyBonus())}`; }
+  const se = $('#settle'); if (se){ const show = S.op >= d.target && S.turn < d.turns, ok = canSettle();
+    se.hidden = !show; se.disabled = S.busy || !ok; se.classList.toggle('wait', !ok);
+    if (show){ se.firstChild.textContent = ok ? '✅ 여론 굳힘 — 지금 정산하기 ' : '⏳ 목표 달성 — 여론 굳히는 중 ';
+      se.querySelector('small').textContent = ok ? `남은 ${d.turns - S.turn}턴 × 보수 5% = +${won(earlyBonus())}`
+        : S.turn < 6 ? `선택 장면이 지나고, 목표를 넘긴 채 ${BAL.holdTurns}턴 버티면 정산 가능`
+        : `목표를 넘긴 채 ${BAL.holdTurns}턴 버티면 정산 가능 (${Math.min(S.hold||0, BAL.holdTurns)}/${BAL.holdTurns})`; } }
 }
 
 function useAcc(){
@@ -1733,9 +1738,10 @@ function reply(t){
 }
 
 const earlyBonus = () => Math.round((ROUNDS[S.r].turns - S.turn) * ROUNDS[S.r].pay * 0.05 / 1000) * 1000;
+const canSettle = () => { const d = ROUNDS[S.r]; return S.op >= d.target && S.turn >= 6 && S.turn < d.turns && (S.hold||0) >= BAL.holdTurns; };
 function settleEarly(){
   const d = ROUNDS[S.r];
-  if (S.busy || S.op < d.target || S.turn < 6 || S.turn >= d.turns) return;
+  if (S.busy || !canSettle()) return;
   S.early = earlyBonus(); S.busy = true; hud();
   line('evt', `✅ 의뢰인에게 "작업 끝났습니다" 보고를 보냈다. ${d.turns - S.turn}턴 일찍.`);
   setTimeout(screenResult, 600);
@@ -1817,6 +1823,8 @@ function endTurn(){
     S.sus = clamp(S.sus - 3, 0, 100); S.op = clamp(S.op, 0, 100);
     if (S.shield){ S.shield--; S.sus = Math.min(S.sus, 99); }
     if (S.skcd) S.skcd--;
+    // 여론 굳히기: 턴이 끝날 때(상대 댓글이 깎아 먹은 뒤) 목표 이상이면 1턴 버틴 것
+    S.hold = S.op >= d.target ? (S.hold||0) + 1 : 0;
     S.turn++;
     if (S.sus >= 100 && banCheck()) return;
     autoAcc();
@@ -2048,7 +2056,7 @@ function screenEnding(kind){
 /* ---------- 엔딩 리뷰 (4지선다 4문항) ----------
    FEEDBACK.url에 구글 설문 응답 주소(…/formResponse)와 문항별 entry 번호를 넣으면 자동 수집.
    비워두면 "결과 복사" 후 카톡 등으로 보내는 방식 */
-const VERSION = '0.17';
+const VERSION = '0.18';
 const FEEDBACK = { url:'', entries:{ q1:'', q2:'', q3:'', q4:'', info:'' } };
 const SURVEY = [
   {id:'q1', q:'난이도는 어땠어요?', a:['너무 쉬움','적당함','좀 어려움','너무 어려움']},

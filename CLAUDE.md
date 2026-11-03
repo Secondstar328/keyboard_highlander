@@ -26,7 +26,7 @@
 - `BILLS` / `payBills`: 레벨업 때 청구서. 모자라면 부계정 판매. 선 넘기 보너스 돈과 짝을 이뤄 "선을 넘을 이유"를 만듦. 바꾼 뒤에는 한 판 전체 시뮬레이션으로 확인 (선 안 넘어도 깰 수는 있고, 넘으면 확실히 쉬워야 함)
 - `TOOLS` / `TOOL_FX`: 레벨별 도구와 효과 칩. `once:true` 도구(언론사·여론조사·포털)는 의뢰당 1회(`S.usedOnce`). 버튜버 광고는 사용자 결정으로 삭제(v0.16). 언론사 매수는 팩트형 최대 `BAL.pressMax`개만 제압
 - 남은 작전비는 `BAL.keepBudget`(절반)만 내 돈이 됨
-- `settleEarly` / `earlyBonus`: 선택 장면(6턴) 뒤 목표를 넘기면 조기 정산. 남은 턴 × 보수 5%
+- `settleEarly` / `earlyBonus` / `canSettle`: 선택 장면(6턴) 뒤, 목표를 넘긴 채 `BAL.holdTurns`(2)턴을 버티면(`S.hold`, 턴 끝 기준) 조기 정산. 남은 턴 × 보수 5%. 잠깐 띄우고 바로 정산하는 공략 방지
 - `LIFESTYLE` / `S.lastIncome`: 청구서에 "늘어난 씀씀이"(지난달 수입의 45%)가 붙음
 - `MY_LINES` / `FOE_LINES` / `PERSONAS`: 조합식 대사와 부계정 말투. 페르소나 `reg`(polite/casual)에 맞는 문장을 `lineFor`/`Bag.nextFit`으로 먼저 고르고, 그래도 안 맞으면 꾸밈을 안 붙임
 
